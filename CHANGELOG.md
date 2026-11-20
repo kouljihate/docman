@@ -4,6 +4,12 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [2.1.2] - 2026-11-20
+
+### Added
+- The application footer shows the running version as a badge at the end of
+  the footer (right side in LTR, left in RTL), matching the login card badge.
+
 ## [2.1.1] - 2026-11-20
 
 ### Changed

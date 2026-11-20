@@ -264,8 +264,9 @@
                     </div>
                     <div class="col text-end">
                         {% if company and company.tax_id %}
-                        {{ _('tax_id') }}: {{ company.tax_id }}
+                        <span class="me-2">{{ _('tax_id') }}: {{ company.tax_id }}</span>
                         {% endif %}
+                        <span class="version-badge badge text-bg-light border" title="Version">v{{ version }}</span>
                     </div>
                 </div>
             </div>
