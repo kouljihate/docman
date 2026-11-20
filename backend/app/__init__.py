@@ -3,11 +3,20 @@ import sys
 from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import quote
-from flask import Flask, render_template, request, redirect, make_response
+
+from flask import Flask, make_response, redirect, render_template, request
 from flask_jwt_extended import JWTManager, decode_token
-from config import settings, VERSION
-from app.translations import t as translate
+
 from app.socketio_server import socketio
+from app.tenancy import (
+    CUSTOMER,
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
+    MAIN_ADMIN,
+    normalize_role,
+)
+from app.translations import t as translate
+from config import VERSION, settings
 
 jwt = JWTManager()
 
@@ -26,7 +35,9 @@ def current_user():
     try:
         decoded = decode_token(token)
         from bson import ObjectId
+
         from app.database import get_db
+
         return get_db().users.find_one({"_id": ObjectId(decoded["sub"])})
     except Exception:
         return None
@@ -43,6 +54,20 @@ def login_required_page(view):
             return redirect("/login?next=" + quote(target, safe="/?=&"))
         return view(*args, **kwargs)
     return wrapper
+
+
+def page_roles(*allowed):
+    """Require a signed-in user whose (normalized) role is in `allowed`."""
+    def decorator(view):
+        @wraps(view)
+        @login_required_page
+        def wrapper(*args, **kwargs):
+            user = current_user()
+            if normalize_role(user.get("role")) not in allowed:
+                return render_template("forbidden.html", active_page=""), 403
+            return view(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def create_app():
@@ -70,33 +95,38 @@ def create_app():
 
     jwt.init_app(app)
 
-    from app.routes.auth import auth_bp
-    from app.routes.users import users_bp
+    from app.routes.activities import activities_bp
     from app.routes.affairs import affairs_bp
+    from app.routes.audit import audit_bp
+    from app.routes.auth import auth_bp
+    from app.routes.companies import companies_bp
+    from app.routes.company import company_bp
+    from app.routes.customers import customers_bp
+    from app.routes.dashboard import dashboard_bp
+    from app.routes.documents import documents_bp
+    from app.routes.reports import reports_bp
+    from app.routes.requests import requests_bp
     from app.routes.services import services_bp
     from app.routes.tasks import tasks_bp
-    from app.routes.dashboard import dashboard_bp
-    from app.routes.reports import reports_bp
-    from app.routes.audit import audit_bp
-    from app.routes.customers import customers_bp
-    from app.routes.activities import activities_bp
-    from app.routes.requests import requests_bp
-    from app.routes.documents import documents_bp
-    from app.routes.company import company_bp
+    from app.routes.users import users_bp
 
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(users_bp)
-    app.register_blueprint(affairs_bp)
-    app.register_blueprint(services_bp)
-    app.register_blueprint(tasks_bp)
-    app.register_blueprint(dashboard_bp)
-    app.register_blueprint(reports_bp)
-    app.register_blueprint(audit_bp)
-    app.register_blueprint(customers_bp)
-    app.register_blueprint(activities_bp)
-    app.register_blueprint(requests_bp)
-    app.register_blueprint(documents_bp)
-    app.register_blueprint(company_bp)
+    for blueprint in (
+        auth_bp,
+        users_bp,
+        companies_bp,
+        affairs_bp,
+        services_bp,
+        tasks_bp,
+        dashboard_bp,
+        reports_bp,
+        audit_bp,
+        customers_bp,
+        activities_bp,
+        requests_bp,
+        documents_bp,
+        company_bp,
+    ):
+        app.register_blueprint(blueprint)
 
     @app.context_processor
     def inject_globals():
@@ -108,23 +138,32 @@ def create_app():
             return translate(key, lang)
 
         user = current_user()
-        token = request.cookies.get("access_token")
+        if user is not None:
+            # Older records/tokens may still say "admin"/"employee".
+            user["role"] = normalize_role(user.get("role"))
 
         user_id = str(user["_id"]) if user else None
 
         company = None
-        if token:
+        if user is not None:
             try:
                 from app.database import get_db
+
                 db = get_db()
-                company = db.company_settings.find_one()
+                if user.get("company_id"):
+                    company = db.companies.find_one({"_id": user["company_id"]})
+                elif normalize_role(user.get("role")) == MAIN_ADMIN:
+                    # Platform header falls back to the legacy settings
+                    # document so the product name still renders.
+                    company = db.company_settings.find_one()
             except Exception:
-                pass
+                company = None
 
         return dict(
             _=_,
             lang=lang,
             user=user,
+            user_role=normalize_role(user.get("role")) if user else None,
             user_id=user_id,
             now=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
             version=VERSION,
@@ -148,12 +187,12 @@ def create_app():
         company = None
         try:
             from app.database import get_db
-            db = get_db()
-            company = db.company_settings.find_one()
+
+            company = get_db().company_settings.find_one()
         except Exception:
             pass
         resp = make_response(render_template("login.html", lang=lang, company=company, next_url=nxt))
-        resp.set_cookie("lang", lang, max_age=365*24*3600)
+        resp.set_cookie("lang", lang, max_age=365 * 24 * 3600)
         return resp
 
     @app.route("/register")
@@ -162,65 +201,85 @@ def create_app():
         company = None
         try:
             from app.database import get_db
-            db = get_db()
-            company = db.company_settings.find_one()
+
+            company = get_db().company_settings.find_one()
         except Exception:
             pass
         resp = make_response(render_template("register.html", lang=lang, company=company))
-        resp.set_cookie("lang", lang, max_age=365*24*3600)
+        resp.set_cookie("lang", lang, max_age=365 * 24 * 3600)
         return resp
 
     @app.route("/dashboard")
     @login_required_page
     def dashboard_page():
-        token = request.cookies.get("access_token")
-        if token:
-            try:
-                decoded = decode_token(token)
-                claims = decoded
-                if claims.get("role") == "employee":
-                    return redirect("/employee-dashboard")
-            except Exception:
-                pass
+        role = normalize_role((current_user() or {}).get("role"))
+        if role == LOCAL_EMPLOYEE:
+            return redirect("/employee-dashboard")
+        if role == CUSTOMER:
+            return redirect("/my-space")
         return render_template("dashboard.html", active_page="dashboard")
 
+    @app.route("/companies")
+    @page_roles(MAIN_ADMIN)
+    def companies_page():
+        return render_template("companies.html", active_page="companies")
+
+    @app.route("/my-space")
+    @page_roles(CUSTOMER)
+    def my_space_page():
+        from bson import ObjectId
+
+        from app.database import get_db
+
+        db = get_db()
+        me = current_user()
+        affairs = list(db.affairs.find({"customer_id": me["_id"], "company_id": me.get("company_id")}).sort("name", 1))
+        activities = list(
+            db.activities.find({"customer_id": me["_id"], "company_id": me.get("company_id")})
+            .sort("created_at", -1)
+            .limit(20)
+        )
+        return render_template(
+            "my_space.html", active_page="my_space", affairs=affairs, activities=activities
+        )
+
     @app.route("/tasks")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def tasks_page():
         return render_template("tasks.html", active_page="tasks")
 
     @app.route("/tasks/create")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def task_create_page():
         return render_template("task_create.html", active_page="tasks")
 
     @app.route("/affairs")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN)
     def affairs_page():
         return render_template("affairs.html", active_page="affairs")
 
     @app.route("/services")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN)
     def services_page():
         return render_template("services.html", active_page="services")
 
     @app.route("/users")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN)
     def users_page():
         return render_template("users.html", active_page="users")
 
     @app.route("/reports")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def reports_page():
         return render_template("reports.html", active_page="reports")
 
     @app.route("/audit")
-    @login_required_page
+    @page_roles(MAIN_ADMIN)
     def audit_page():
         return render_template("audit.html", active_page="audit")
 
     @app.route("/activities")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def activities_page():
         return render_template("activities.html", active_page="activities")
 
@@ -230,22 +289,22 @@ def create_app():
         return render_template("notifications.html", active_page="notifications")
 
     @app.route("/employee-dashboard")
-    @login_required_page
+    @page_roles(LOCAL_EMPLOYEE)
     def employee_dashboard_page():
         return render_template("employee_dashboard.html", active_page="employee_dashboard")
 
     @app.route("/messaging")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def messaging_page():
         return render_template("messaging.html", active_page="messaging")
 
     @app.route("/customers")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN)
     def customers_page():
         return render_template("customers.html", active_page="customers")
 
     @app.route("/customers/<customer_id>")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN)
     def customer_detail_page(customer_id):
         return render_template("customer_detail.html", active_page="customers", customer_id=customer_id)
 
@@ -255,7 +314,7 @@ def create_app():
         return render_template("requests.html", active_page="requests")
 
     @app.route("/documents")
-    @login_required_page
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def documents_page():
         return render_template("documents.html", active_page="documents")
 
@@ -264,6 +323,7 @@ def create_app():
     @app.route("/api/health")
     def health():
         from app.database import get_db
+
         try:
             get_db().command("ping")
             return {"status": "ok", "db": "connected", "version": VERSION}

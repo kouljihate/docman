@@ -1,40 +1,50 @@
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+
 from bson import ObjectId
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from app.database import get_db
-from app.models.task import TaskCreate, TaskUpdate, TaskResponse
+from app.models.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.audit_service import AuditService
-from functools import wraps
+from app.tenancy import (
+    company_scope,
+    current_company_id,
+    current_user_id,
+    is_customer,
+    local_admin_required,
+    local_staff_required,
+    to_object_id,
+)
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api/tasks")
 
 
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(*args, **kwargs)
-    return wrapper
-
-
 @tasks_bp.route("/", methods=["POST"])
 @jwt_required()
-@admin_required
+@local_staff_required
 def create_task():
     db = get_db()
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     try:
         task_data = TaskCreate(**data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
 
     task_dict = task_data.model_dump()
-    task_dict["created_by"] = ObjectId(get_jwt_identity())
+    task_dict["company_id"] = current_company_id()
+    task_dict["created_by"] = ObjectId(current_user_id())
     task_dict["created_at"] = datetime.now(timezone.utc)
     task_dict["updated_at"] = datetime.now(timezone.utc)
+
+    assigned_to = data.get("assigned_to")
+    if assigned_to:
+        employee = db.users.find_one(
+            company_scope({"_id": to_object_id(assigned_to), "role": "local_employee"})
+        )
+        if not employee:
+            return jsonify({"error": "Assigned user must be an employee of your company"}), 400
+        task_dict["assigned_to"] = employee["_id"]
 
     result = db.tasks.insert_one(task_dict)
     task_dict["_id"] = str(result.inserted_id)
@@ -43,7 +53,7 @@ def create_task():
         action="create",
         entity_type="task",
         entity_id=str(result.inserted_id),
-        performed_by=get_jwt_identity(),
+        performed_by=current_user_id(),
         description=f"Task '{task_data.title}' created",
     )
 
@@ -52,9 +62,10 @@ def create_task():
 
 @tasks_bp.route("/", methods=["GET"])
 @jwt_required()
+@local_staff_required
 def list_tasks():
     db = get_db()
-    query = {}
+    query = company_scope()
 
     status = request.args.get("status")
     if status:
@@ -69,9 +80,10 @@ def list_tasks():
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
 @jwt_required()
+@local_staff_required
 def get_task(task_id):
     db = get_db()
-    task = db.tasks.find_one({"_id": ObjectId(task_id)})
+    task = db.tasks.find_one(company_scope({"_id": to_object_id(task_id)}))
     if not task:
         return jsonify({"error": "Task not found"}), 404
     return jsonify(TaskResponse(**task).model_dump(by_alias=True)), 200
@@ -79,58 +91,55 @@ def get_task(task_id):
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
 @jwt_required()
+@local_staff_required
 def update_task(task_id):
     db = get_db()
-    identity = get_jwt_identity()
-    claims = get_jwt()
-    data = request.get_json()
-
+    data = request.get_json(silent=True) or {}
     try:
         update_data = TaskUpdate(**data)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 400
 
     update_dict = {k: v for k, v in update_data.model_dump(exclude_unset=True).items() if v is not None}
     if not update_dict:
         return jsonify({"error": "No fields to update"}), 400
 
-    update_dict["updated_at"] = datetime.now(timezone.utc)
-
-    old = db.tasks.find_one({"_id": ObjectId(task_id)})
+    old = db.tasks.find_one(company_scope({"_id": to_object_id(task_id)}))
     if not old:
         return jsonify({"error": "Task not found"}), 404
 
-    db.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": update_dict})
+    update_dict["updated_at"] = datetime.now(timezone.utc)
+    db.tasks.update_one({"_id": old["_id"]}, {"$set": update_dict})
 
     AuditService.log(
         action="update",
         entity_type="task",
-        entity_id=task_id,
-        performed_by=identity,
+        entity_id=str(old["_id"]),
+        performed_by=current_user_id(),
         changes={"before": {k: str(old.get(k)) for k in update_dict}, "after": {k: str(v) for k, v in update_dict.items()}},
         description=f"Task '{old.get('title')}' updated",
     )
 
-    updated = db.tasks.find_one({"_id": ObjectId(task_id)})
+    updated = db.tasks.find_one({"_id": old["_id"]})
     return jsonify(TaskResponse(**updated).model_dump(by_alias=True)), 200
 
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
 @jwt_required()
-@admin_required
+@local_admin_required
 def delete_task(task_id):
     db = get_db()
-    task = db.tasks.find_one({"_id": ObjectId(task_id)})
+    task = db.tasks.find_one(company_scope({"_id": to_object_id(task_id)}))
     if not task:
         return jsonify({"error": "Task not found"}), 404
 
-    db.tasks.delete_one({"_id": ObjectId(task_id)})
+    db.tasks.delete_one({"_id": task["_id"]})
 
     AuditService.log(
         action="delete",
         entity_type="task",
-        entity_id=task_id,
-        performed_by=get_jwt_identity(),
+        entity_id=str(task["_id"]),
+        performed_by=current_user_id(),
         description=f"Task '{task.get('title')}' deleted",
     )
 

@@ -9,6 +9,18 @@ from functools import wraps
 from app.database import get_db
 from app.models.document import DocumentCreate, DocumentResponse
 from app.services.audit_service import AuditService
+from app.tenancy import (
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
+    company_scope,
+    current_company_id,
+    current_role,
+    current_user_id,
+    is_customer,
+    local_admin_required,
+    local_staff_required,
+    to_object_id,
+)
 
 documents_bp = Blueprint("documents", __name__, url_prefix="/api/documents")
 
@@ -22,28 +34,17 @@ os.makedirs(DOCUMENTS_DIR, exist_ok=True)
 
 
 def _oid(value):
-    try:
-        return ObjectId(value)
-    except (InvalidId, TypeError):
-        return None
+    return to_object_id(value)
 
 
 def _can_access(doc):
-    """Staff may read every document; a customer only their own."""
-    claims = get_jwt()
-    if claims.get("role") in ("admin", "employee"):
-        return True
-    return str(doc.get("customer_id")) == get_jwt_identity()
-
-
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(*args, **kwargs)
-    return wrapper
+    """Company staff may read their company's documents; a customer only their own."""
+    if current_role() in (LOCAL_ADMIN, LOCAL_EMPLOYEE):
+        return doc.get("company_id") == current_company_id()
+    return (
+        doc.get("company_id") == current_company_id()
+        and str(doc.get("customer_id")) == get_jwt_identity()
+    )
 
 
 @documents_bp.route("/", methods=["GET"])
@@ -58,8 +59,10 @@ def list_documents():
         query["customer_id"] = ObjectId(customer_id)
     if service_id:
         query["service_id"] = ObjectId(service_id)
+    # Documents never cross tenants.
+    query["company_id"] = current_company_id()
     # Customers only ever see their own documents, whatever they ask for.
-    if get_jwt().get("role") not in ("admin", "employee"):
+    if is_customer():
         query["customer_id"] = ObjectId(get_jwt_identity())
 
     pipeline = [
@@ -108,7 +111,7 @@ def list_documents():
 @jwt_required()
 def get_document(document_id):
     db = get_db()
-    doc = db.documents.find_one({"_id": _oid(document_id)})
+    doc = db.documents.find_one(company_scope({"_id": _oid(document_id)}))
     if not doc:
         return jsonify({"error": "Document not found"}), 404
     if not _can_access(doc):
@@ -126,7 +129,7 @@ def get_document(document_id):
 def get_document_file(document_id):
     from flask import send_file
     db = get_db()
-    doc = db.documents.find_one({"_id": _oid(document_id)})
+    doc = db.documents.find_one(company_scope({"_id": _oid(document_id)}))
     if not doc:
         return jsonify({"error": "Document not found"}), 404
     if not _can_access(doc):
@@ -139,7 +142,7 @@ def get_document_file(document_id):
 
 @documents_bp.route("/", methods=["POST"])
 @jwt_required()
-@admin_required
+@local_staff_required
 def upload_document():
     db = get_db()
     admin_id = get_jwt_identity()
@@ -156,11 +159,11 @@ def upload_document():
     if not file or not file.filename:
         return jsonify({"error": "File is required"}), 400
 
-    customer = db.users.find_one({"_id": ObjectId(customer_id), "role": "customer"})
+    customer = db.users.find_one(company_scope({"_id": ObjectId(customer_id), "role": "customer"}))
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
 
-    service = db.services.find_one({"_id": ObjectId(service_id)})
+    service = db.services.find_one(company_scope({"_id": ObjectId(service_id)}))
     if not service:
         return jsonify({"error": "Service not found"}), 404
 
@@ -194,6 +197,7 @@ def upload_document():
         "mime_type": "application/pdf",
         "description": description,
         "uploaded_by": ObjectId(admin_id),
+        "company_id": current_company_id(),
         "created_at": now,
         "updated_at": now,
     }
@@ -218,10 +222,10 @@ def upload_document():
 
 @documents_bp.route("/<document_id>", methods=["DELETE"])
 @jwt_required()
-@admin_required
+@local_admin_required
 def delete_document(document_id):
     db = get_db()
-    doc = db.documents.find_one({"_id": _oid(document_id)})
+    doc = db.documents.find_one(company_scope({"_id": _oid(document_id)}))
     if not doc:
         return jsonify({"error": "Document not found"}), 404
 

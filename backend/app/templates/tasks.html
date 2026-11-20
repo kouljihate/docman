@@ -8,7 +8,7 @@
         {% if user.role == 'customer' %}{{ _('my_tasks') }}{% else %}{{ _('task_list') }}{% endif %}
     </h4>
     <div class="d-flex gap-2">
-        {% if user.role == 'admin' %}
+        {% if user.role == 'local_admin' %}
         <a href="/tasks/create" class="btn btn-cse btn-sm">
             <i class="bi bi-plus-lg me-1"></i>{{ _('create_task') }}
         </a>
@@ -100,7 +100,7 @@ async function loadTasks() {
                 <button class="btn btn-sm btn-outline-info" onclick="openDetail('${t._id}')" title="{{ _('task_detail') }}">
                     <i class="bi bi-eye"></i>
                 </button>
-                {% if user.role == 'admin' %}
+                {% if user.role == 'local_admin' %}
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${t._id}')" title="{{ _('delete') }}">
                     <i class="bi bi-trash"></i>
                 </button>

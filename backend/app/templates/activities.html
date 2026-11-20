@@ -5,7 +5,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h4 class="mb-0"><i class="bi bi-activity me-2"></i>{{ _('activity_management') }}</h4>
-    {% if user.role == 'admin' %}
+    {% if user.role == 'local_admin' %}
     <button class="btn btn-cse" onclick="openCreateModal()">
         <i class="bi bi-plus-lg me-1"></i>{{ _('create_activity') }}
     </button>
@@ -36,7 +36,7 @@
     </div>
 </div>
 
-{% if user.role == 'admin' %}
+{% if user.role == 'local_admin' %}
 <div class="modal fade" id="activityModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -149,17 +149,17 @@ async function loadActivities() {
             <td><span class="badge rounded-pill bg-${statusBadge}">${a.status}</span></td>
             <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
             <td class="table-actions">
-                ${a.status === 'pending' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'admin') ? `
+                ${a.status === 'pending' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'local_admin') ? `
                     <button class="btn btn-sm btn-outline-info" onclick="updateStatus('${a._id}','in_progress')" title="{{ _('accept') }}">
                         <i class="bi bi-check-lg"></i>
                     </button>
                 ` : ''}
-                ${a.status === 'in_progress' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'admin') ? `
+                ${a.status === 'in_progress' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'local_admin') ? `
                     <button class="btn btn-sm btn-outline-success" onclick="updateStatus('${a._id}','completed')" title="{{ _('complete') }}">
                         <i class="bi bi-check-all"></i>
                     </button>
                 ` : ''}
-                {% if user.role == 'admin' %}
+                {% if user.role == 'local_admin' %}
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteActivity('${a._id}')" title="{{ _('delete') }}">
                     <i class="bi bi-trash"></i>
                 </button>
@@ -283,7 +283,7 @@ function moveActToLeft(id) {
     renderActSelectedTasks(selected);
 }
 
-{% if user.role == 'admin' %}
+{% if user.role == 'local_admin' %}
 async function openCreateModal() {
     document.getElementById('activityForm').reset();
     document.getElementById('activityError').classList.add('d-none');

@@ -1,12 +1,26 @@
+"""Customer/staff requests, stored per company and routed to a local admin."""
 import os
 import re
-import subprocess
 from datetime import datetime, timezone
-from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from functools import wraps
+
+from bson import ObjectId
+from flask import Blueprint, jsonify, request, send_file
+from flask_jwt_extended import get_jwt_identity, jwt_required
 from werkzeug.utils import secure_filename
+
+from app.database import get_db
 from app.services.audit_service import AuditService
+from app.tenancy import (
+    CUSTOMER,
+    LOCAL_ADMIN,
+    company_scope,
+    current_company_id,
+    current_role,
+    current_user_id,
+    local_staff_required,
+    role_required,
+    to_object_id,
+)
 
 requests_bp = Blueprint("requests", __name__, url_prefix="/api/requests")
 
@@ -15,144 +29,86 @@ REQUESTS_DIR = os.path.join(PROJECT_ROOT, "requests")
 ALLOWED_EXT = {"png", "jpg", "jpeg", "gif", "webp", "bmp"}
 
 
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(*args, **kwargs)
-    return wrapper
+def _safe_folder(folder):
+    return os.path.basename(folder) if folder else ""
 
 
-def _parse_request_folder(folder_name):
-    folder_path = os.path.join(REQUESTS_DIR, folder_name)
-    if not os.path.isdir(folder_path):
-        return None
-    md_files = [f for f in os.listdir(folder_path) if f.endswith(".md")]
-    if not md_files:
-        return None
-    md_file = md_files[0]
-    md_path = os.path.join(folder_path, md_file)
-    try:
-        with open(md_path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception:
-        return None
-    title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
-    title = title_match.group(1).strip() if title_match else folder_name
-    date_match = re.search(r"\*\*Date:\*\*\s+(.+)", content)
-    date_str = date_match.group(1).strip() if date_match else ""
-    image_count = sum(
-        1 for f in os.listdir(folder_path)
-        if f.lower().endswith(tuple(ALLOWED_EXT))
-    )
+def _request_query(extra=None):
+    query = company_scope(extra)
+    if current_role() == CUSTOMER:
+        query["created_by"] = to_object_id(get_jwt_identity())
+    return query
+
+
+def _serialize(doc):
     return {
-        "foldername": folder_name,
-        "title": title,
-        "date": date_str,
-        "image_count": image_count,
+        "foldername": str(doc["_id"]),
+        "title": doc.get("title", ""),
+        "date": doc.get("created_at").strftime("%Y-%m-%d %H:%M UTC") if isinstance(doc.get("created_at"), datetime) else "",
+        "image_count": len(doc.get("screenshots") or []),
+        "status": doc.get("status", "open"),
+        "created_by_name": doc.get("created_by_name", ""),
     }
 
 
-def _run_git(cmd, cwd):
-    try:
-        result = subprocess.run(
-            cmd,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
-        )
-        return result.returncode == 0, result.stdout.strip(), result.stderr.strip()
-    except subprocess.TimeoutExpired:
-        return False, "", "Git operation timed out"
-    except FileNotFoundError:
-        return False, "", "Git executable not found"
-    except Exception as e:
-        return False, "", str(e)
+def _markdown(doc):
+    now_str = doc["created_at"].strftime("%Y-%m-%d %H:%M UTC") if isinstance(doc.get("created_at"), datetime) else ""
+    refs = "\n".join(f"![Screenshot {i+1}]({name})" for i, name in enumerate(doc.get("screenshots") or []))
+    screenshots = f"\n\n## Screenshots\n\n{refs}" if refs else ""
+    return f"""# {doc.get('title', '')}
 
+**Date:** {now_str}
+**Author:** {doc.get('created_by_name', '')}
 
-def _generate_foldername():
-    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
-    return f"R-{ts}"
+---
 
-
-def _save_uploaded_files(files, folder_path):
-    saved = []
-    for i, file in enumerate(files, 1):
-        if file.filename:
-            ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
-            if ext not in ALLOWED_EXT:
-                continue
-            safe_name = f"image_{i}.{ext}"
-            file.save(os.path.join(folder_path, safe_name))
-            saved.append(safe_name)
-    return saved
+{doc.get('content', '')}{screenshots}
+"""
 
 
 @requests_bp.route("/", methods=["GET"])
 @jwt_required()
-@admin_required
+@role_required("local_admin", "local_employee", "customer")
 def list_requests():
-    if not os.path.isdir(REQUESTS_DIR):
-        return jsonify([])
-    folders = sorted(
-        (d for d in os.listdir(REQUESTS_DIR) if os.path.isdir(os.path.join(REQUESTS_DIR, d))),
-        key=lambda d: os.path.getmtime(os.path.join(REQUESTS_DIR, d)),
-        reverse=True,
-    )
-    result = []
-    for folder in folders:
-        parsed = _parse_request_folder(folder)
-        if parsed:
-            result.append(parsed)
-    return jsonify(result)
+    db = get_db()
+    documents = list(db.requests.find(_request_query()).sort("created_at", -1))
+    return jsonify([_serialize(doc) for doc in documents]), 200
 
 
-@requests_bp.route("/<foldername>", methods=["GET"])
+@requests_bp.route("/<request_id>", methods=["GET"])
 @jwt_required()
-@admin_required
-def get_request_detail(foldername):
-    folder_path = os.path.join(REQUESTS_DIR, foldername)
-    if not os.path.isdir(folder_path):
+@role_required("local_admin", "local_employee", "customer")
+def get_request_detail(request_id):
+    db = get_db()
+    doc = db.requests.find_one(_request_query({"_id": to_object_id(request_id)}))
+    if not doc:
+        return jsonify({"error": "Request not found"}), 404
+    return jsonify(
+        {
+            "foldername": str(doc["_id"]),
+            "title": doc.get("title", ""),
+            "date": _serialize(doc)["date"],
+            "markdown": _markdown(doc),
+            "images": [f"/api/requests/{doc['_id']}/image/{name}" for name in doc.get("screenshots") or []],
+            "status": doc.get("status", "open"),
+        }
+    ), 200
+
+
+@requests_bp.route("/<request_id>/image/<imagename>", methods=["GET"])
+@jwt_required()
+@role_required("local_admin", "local_employee", "customer")
+def get_request_image(request_id, imagename):
+    db = get_db()
+    doc = db.requests.find_one(_request_query({"_id": to_object_id(request_id)}))
+    if not doc:
         return jsonify({"error": "Request not found"}), 404
 
-    md_files = [f for f in os.listdir(folder_path) if f.endswith(".md")]
-    if not md_files:
-        return jsonify({"error": "Request markdown file not found"}), 404
+    name = secure_filename(imagename)
+    if name not in (doc.get("screenshots") or []):
+        return jsonify({"error": "Image not found"}), 404
 
-    md_file = md_files[0]
-    md_path = os.path.join(folder_path, md_file)
-    try:
-        with open(md_path, "r", encoding="utf-8") as f:
-            md_content = f.read()
-    except Exception as e:
-        return jsonify({"error": f"Failed to read request file: {str(e)}"}), 500
-
-    images = []
-    for fname in sorted(os.listdir(folder_path)):
-        ext = fname.rsplit(".", 1)[-1].lower() if "." in fname else ""
-        if ext in ALLOWED_EXT:
-            images.append(f"/api/requests/{foldername}/image/{fname}")
-
-    parsed = _parse_request_folder(foldername)
-    return jsonify({
-        "foldername": foldername,
-        "title": parsed["title"] if parsed else foldername,
-        "date": parsed["date"] if parsed else "",
-        "markdown": md_content,
-        "images": images,
-    })
-
-
-@requests_bp.route("/<foldername>/image/<imagename>")
-@jwt_required()
-@admin_required
-def get_request_image(foldername, imagename):
-    from flask import send_file
-    image_path = os.path.join(REQUESTS_DIR, foldername, imagename)
+    image_path = os.path.join(REQUESTS_DIR, _safe_folder(doc.get("folder", "")), name)
     if not os.path.isfile(image_path):
         return jsonify({"error": "Image not found"}), 404
     return send_file(image_path)
@@ -160,10 +116,11 @@ def get_request_image(foldername, imagename):
 
 @requests_bp.route("/", methods=["POST"])
 @jwt_required()
-@admin_required
+@role_required("local_admin", "local_employee", "customer")
 def create_request():
-    title = request.form.get("title", "").strip()
-    content = request.form.get("content", "").strip()
+    db = get_db()
+    title = (request.form.get("title") or "").strip()
+    content = (request.form.get("content") or "").strip()
     files = request.files.getlist("screenshots")
 
     if not title:
@@ -171,60 +128,115 @@ def create_request():
     if not content:
         return jsonify({"error": "Content is required"}), 400
 
-    admin_id = get_jwt_identity()
+    identity = get_jwt_identity()
+    company_id = current_company_id()
+    me = db.users.find_one({"_id": ObjectId(identity)}, {"full_name": 1, "local_admin_id": 1, "role": 1})
     now = datetime.now(timezone.utc)
-    now_str = now.strftime("%Y-%m-%d %H:%M UTC")
-    foldername = _generate_foldername()
-    folder_path = os.path.join(REQUESTS_DIR, foldername)
 
+    # Customer requests go to their own local admin; staff requests to the
+    # company's first active admin.
+    target_admin = None
+    if current_role() == CUSTOMER and me and me.get("local_admin_id"):
+        target_admin = me["local_admin_id"]
+    if target_admin is None:
+        admin = db.users.find_one({"company_id": company_id, "role": LOCAL_ADMIN, "is_active": True})
+        target_admin = admin["_id"] if admin else None
+
+    request_id = ObjectId()
+    folder = str(request_id)
+    folder_path = os.path.join(REQUESTS_DIR, folder)
     os.makedirs(folder_path, exist_ok=True)
 
-    image_refs = ""
-    if files:
-        saved_images = _save_uploaded_files(files, folder_path)
-        if saved_images:
-            image_refs = "\n\n## Screenshots\n\n" + "\n".join(
-                f"![Screenshot {i+1}]({name})" for i, name in enumerate(saved_images)
-            )
+    saved = []
+    for index, upload in enumerate(files, 1):
+        if not upload or not upload.filename:
+            continue
+        ext = upload.filename.rsplit(".", 1)[-1].lower() if "." in upload.filename else ""
+        if ext not in ALLOWED_EXT:
+            continue
+        name = f"image_{index}.{ext}"
+        upload.save(os.path.join(folder_path, name))
+        saved.append(name)
 
-    md_content = f"""# {title}
+    doc = {
+        "_id": request_id,
+        "company_id": company_id,
+        "created_by": ObjectId(identity),
+        "created_by_name": (me or {}).get("full_name", ""),
+        "target_admin_id": target_admin,
+        "title": title,
+        "content": content,
+        "folder": folder,
+        "screenshots": saved,
+        "status": "open",
+        "created_at": now,
+        "updated_at": now,
+    }
+    db.requests.insert_one(doc)
 
-**Date:** {now_str}
-**Author:** Admin
+    # The local admin is notified in-app (no email/git side effects).
+    if target_admin:
+        from app.socketio_server import notify_badge_update, notify_user
 
----
-
-{content}{image_refs}
-"""
-
-    md_filename = f"{foldername}.md"
-    md_path = os.path.join(folder_path, md_filename)
-    try:
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(md_content)
-    except IOError as e:
-        return jsonify({"error": f"Failed to write file: {str(e)}"}), 500
-
-    # Version control is optional: the folder is already saved on disk, and in
-    # Docker the requests directory is a volume without a Git repository.
-    ok, out, err = _run_git(["git", "add", os.path.join("requests", foldername)], PROJECT_ROOT)
-    if not ok:
-        return jsonify({"ok": True, "foldername": foldername, "warning": f"Request saved but not committed: {err}"}), 201
-
-    ok, out, err = _run_git(["git", "commit", "-m", f"Add request: {title}"], PROJECT_ROOT)
-    if not ok:
-        return jsonify({"ok": True, "foldername": foldername, "warning": f"Request saved but not committed: {err}"}), 201
-
-    ok, out, err = _run_git(["git", "push"], PROJECT_ROOT)
-    if not ok:
-        return jsonify({"ok": True, "foldername": foldername, "warning": f"Folder saved and committed but push failed: {err}"}), 201
+        notification_id = db.notifications.insert_one(
+            {
+                "user_id": target_admin,
+                "company_id": company_id,
+                "type": "request_created",
+                "title": "New request",
+                "message": f"{doc['created_by_name']} submitted: {title}",
+                "request_id": request_id,
+                "read": False,
+                "created_at": now,
+            }
+        ).inserted_id
+        notify_user(
+            str(target_admin),
+            {
+                "_id": str(notification_id),
+                "type": "request_created",
+                "title": "New request",
+                "message": f"{doc['created_by_name']} submitted: {title}",
+                "request_id": str(request_id),
+                "read": False,
+                "created_at": now.isoformat(),
+            },
+        )
+        notify_badge_update(str(target_admin))
 
     AuditService.log(
         action="create",
         entity_type="request",
-        entity_id=foldername,
-        performed_by=admin_id,
-        description=f"Request '{title}' created and pushed to GitHub",
+        entity_id=str(request_id),
+        performed_by=identity,
+        description=f"Request '{title}' created",
     )
 
-    return jsonify({"ok": True, "foldername": foldername, "message": "Request created and pushed to GitHub"}), 201
+    return jsonify({"ok": True, "foldername": folder, "message": "Request created"}), 201
+
+
+@requests_bp.route("/<request_id>/status", methods=["PUT"])
+@jwt_required()
+@local_staff_required
+def update_request_status(request_id):
+    db = get_db()
+    doc = db.requests.find_one({"_id": to_object_id(request_id), "company_id": current_company_id()})
+    if not doc:
+        return jsonify({"error": "Request not found"}), 404
+
+    status = (request.get_json(silent=True) or {}).get("status", "").strip()
+    if status not in ("open", "in_progress", "closed"):
+        return jsonify({"error": "Invalid status"}), 400
+
+    db.requests.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"status": status, "updated_at": datetime.now(timezone.utc)}},
+    )
+    AuditService.log(
+        action="update",
+        entity_type="request",
+        entity_id=str(doc["_id"]),
+        performed_by=current_user_id(),
+        description=f"Request '{doc.get('title')}' marked {status}",
+    )
+    return jsonify({"ok": True, "status": status}), 200

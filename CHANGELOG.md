@@ -4,6 +4,44 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.0.0] - 2026-11-20
+
+Multi-company (tenant) release with four profiles. **Breaking:** roles are now
+`main_admin`, `local_admin`, `local_employee` and `customer`, and every record
+belongs to a company.
+
+### Added
+- `companies` collection plus a platform API (`/api/companies`) and a
+  **Companies** page for the main administrator: create a company together
+  with its first local admin, activate/deactivate, delete a tenant.
+- Four profiles with enforced permissions:
+  - **Main Admin** – company accounts, global dashboard, platform audit logs.
+  - **Local Admin** – their company's customers, services, documents, tasks,
+    activities, employees, messaging, reports, notifications and requests.
+  - **Local Employee** – tasks, activities, documents, reports, messaging,
+    notifications and requests.
+  - **Customer** – own affairs/activities plus requests routed to their own
+    local admin.
+- `app/tenancy.py`: shared role helpers, `company_scope()` and role decorators
+  applied to every API route.
+- `/my-space` customer page, company picker on the public sign-up form, and a
+  role-aware navigation built from `_nav.html`.
+- `backend/migrate_tenancy.py` to move an existing single-company install to
+  the tenant model (default company, legacy roles, backfilled `company_id`).
+
+### Changed
+- The first registered account bootstraps the `main_admin`; later public
+  sign-ups always join an existing company as a customer.
+- Requests are stored as tenant records routed to a local admin (previously a
+  folder committed to Git), with in-app notifications.
+- Company settings are per company; the main admin manages them through the
+  Companies page.
+
+### Fixed
+- Cross-tenant data leaks: every query on users, customers, affairs, services,
+  tasks, activities, documents, requests, notifications and audit logs is now
+  scoped to the caller's company.
+
 ## [2.1.2] - 2026-11-20
 
 ### Added

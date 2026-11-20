@@ -9,29 +9,22 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from app.database import get_db
+from app.tenancy import company_scope, local_staff_required
 from functools import wraps
 
 reports_bp = Blueprint("reports", __name__, url_prefix="/api/reports")
 
 
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(*args, **kwargs)
-    return wrapper
 
 
 @reports_bp.route("/tasks", methods=["GET"])
 @jwt_required()
-@admin_required
+@local_staff_required
 def tasks_report():
     db = get_db()
     status_filter = request.args.get("status")
 
-    query = {}
+    query = company_scope()
     if status_filter:
         query["status"] = status_filter
 
@@ -127,10 +120,10 @@ def tasks_report():
 
 @reports_bp.route("/services", methods=["GET"])
 @jwt_required()
-@admin_required
+@local_staff_required
 def services_report():
     db = get_db()
-    services = list(db.services.find().sort("name", 1))
+    services = list(db.services.find(company_scope()).sort("name", 1))
 
     buf = BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4)
@@ -179,13 +172,13 @@ def services_report():
 
 @reports_bp.route("/users", methods=["GET"])
 @jwt_required()
-@admin_required
+@local_staff_required
 def users_report():
     db = get_db()
     role_filter = request.args.get("role")
     status_filter = request.args.get("status")
 
-    query = {}
+    query = company_scope()
     if role_filter:
         query["role"] = role_filter
     if status_filter == "active":

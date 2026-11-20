@@ -4,11 +4,17 @@ from bson import ObjectId
 from pydantic import BaseModel, Field, EmailStr, model_validator
 
 
+# "admin"/"employee" are legacy aliases kept for older clients.
+ROLE_VALUES = Literal[
+    "main_admin", "local_admin", "local_employee", "customer", "admin", "employee"
+]
+
+
 class UserCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
     password: str = Field(..., min_length=6)
-    role: Literal["admin", "employee", "customer"] = "customer"
+    role: ROLE_VALUES = "customer"
     full_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
     is_active: bool = True
@@ -19,7 +25,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     is_active: Optional[bool] = None
-    role: Optional[Literal["admin", "employee", "customer"]] = None
+    role: Optional[ROLE_VALUES] = None
 
 
 class UserLogin(BaseModel):

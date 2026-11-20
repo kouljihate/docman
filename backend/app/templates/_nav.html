@@ -1,0 +1,138 @@
+{% macro nav_items(active_page, current_user, t, dark=false) %}
+{% set link_class = 'nav-link text-white' if dark else 'nav-link' %}
+{% set role = current_user.role if current_user else none %}
+
+{% if role == 'main_admin' %}
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'dashboard' }}" href="/dashboard">
+        <i class="bi bi-grid-1x2-fill me-2"></i>{{ t('dashboard') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'companies' }}" href="/companies">
+        <i class="bi bi-buildings me-2"></i>{{ t('companies') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'audit' }}" href="/audit">
+        <i class="bi bi-clock-history me-2"></i>{{ t('audit_logs') }}
+    </a>
+</li>
+
+{% elif role == 'local_admin' %}
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'dashboard' }}" href="/dashboard">
+        <i class="bi bi-grid-1x2-fill me-2"></i>{{ t('dashboard') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'customers' }}" href="/customers">
+        <i class="bi bi-person-badge me-2"></i>{{ t('customers') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'services' }}" href="/services">
+        <i class="bi bi-gear me-2"></i>{{ t('services') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'documents' }}" href="/documents">
+        <i class="bi bi-file-earmark-pdf me-2"></i>{{ t('documents') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'tasks' }}" href="/tasks">
+        <i class="bi bi-list-task me-2"></i>{{ t('task_management') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'activities' }}" href="/activities">
+        <i class="bi bi-activity me-2"></i>{{ t('activity_management') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'users' }}" href="/users">
+        <i class="bi bi-people me-2"></i>{{ t('users') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'reports' }}" href="/reports">
+        <i class="bi bi-file-earmark-bar-graph me-2"></i>{{ t('reports') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'messaging' }}" href="/messaging">
+        <i class="bi bi-chat-dots me-2"></i>{{ t('messaging') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'notifications' }}" href="/notifications">
+        <i class="bi bi-bell me-2"></i>{{ t('notifications') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'requests' }}" href="/requests">
+        <i class="bi bi-chat-square-text me-2"></i>{{ t('request_management') }}
+    </a>
+</li>
+
+{% elif role == 'local_employee' %}
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'employee_dashboard' }}" href="/employee-dashboard">
+        <i class="bi bi-grid-1x2-fill me-2"></i>{{ t('my_dashboard') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'tasks' }}" href="/tasks">
+        <i class="bi bi-list-task me-2"></i>{{ t('task_management') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'documents' }}" href="/documents">
+        <i class="bi bi-file-earmark-pdf me-2"></i>{{ t('documents') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'activities' }}" href="/activities">
+        <i class="bi bi-activity me-2"></i>{{ t('activity_management') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'reports' }}" href="/reports">
+        <i class="bi bi-file-earmark-bar-graph me-2"></i>{{ t('reports') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'messaging' }}" href="/messaging">
+        <i class="bi bi-chat-dots me-2"></i>{{ t('messaging') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'notifications' }}" href="/notifications">
+        <i class="bi bi-bell me-2"></i>{{ t('notifications') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'requests' }}" href="/requests">
+        <i class="bi bi-chat-square-text me-2"></i>{{ t('request_management') }}
+    </a>
+</li>
+
+{% elif role == 'customer' %}
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'my_space' }}" href="/my-space">
+        <i class="bi bi-person-square me-2"></i>{{ t('my_space') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'requests' }}" href="/requests">
+        <i class="bi bi-chat-square-text me-2"></i>{{ t('request_management') }}
+    </a>
+</li>
+<li class="nav-item">
+    <a class="{{ link_class }} {{ 'active' if active_page == 'notifications' }}" href="/notifications">
+        <i class="bi bi-bell me-2"></i>{{ t('notifications') }}
+    </a>
+</li>
+{% endif %}
+{% endmacro %}

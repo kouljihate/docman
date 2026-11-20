@@ -50,6 +50,27 @@ docker compose exec -T app python -m pytest -q tests
 `requirements-dev.txt` holds the test-only dependencies and `tests/` is excluded
 from the Docker build context.
 
+## Multi-company model
+
+The app is multi-tenant. Roles (`backend/app/tenancy.py`):
+
+| Profile | Scope |
+| --- | --- |
+| `main_admin` | Platform: companies, global dashboard, audit logs |
+| `local_admin` | One company: customers, services, documents, tasks, activities, employees, messaging, reports, notifications, requests |
+| `local_employee` | One company: tasks, activities, documents, reports, messaging, notifications, requests |
+| `customer` | Own affairs/activities; requests go to their own local admin |
+
+Every tenant collection carries `company_id`; API queries must use
+`company_scope()` from `app/tenancy.py` and mutations must stamp `company_id`
+(via `tenant_fields()`), otherwise data leaks across companies.
+
+After upgrading an existing database run:
+
+```bash
+docker compose exec app python migrate_tenancy.py --main-admin admin
+```
+
 ## Auth model
 
 - The JWT session token is an `HttpOnly`, `SameSite=Lax` cookie; page scripts

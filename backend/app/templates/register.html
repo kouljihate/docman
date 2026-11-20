@@ -24,6 +24,12 @@
         <label class="form-label">{{ _('password') }}</label>
         <input type="password" name="password" class="form-control" required minlength="6">
     </div>
+    <div class="mb-3 text-start" id="companySelectWrap">
+        <label class="form-label">{{ _('select_company') }}</label>
+        <select name="company_id" class="form-select" required>
+            <option value="">{{ _('loading') }}</option>
+        </select>
+    </div>
     <div id="registerError" class="alert alert-danger d-none"></div>
     <button type="submit" class="btn btn-cse w-100 btn-lg mb-3">
         <span id="registerBtnText">{{ _('register') }}</span>
@@ -36,6 +42,22 @@
 </form>
 
 <script>
+(async function loadCompanies() {
+    try {
+        const res = await fetch('/api/companies/public');
+        const companies = await res.json();
+        const select = document.querySelector('#companySelectWrap select');
+        if (!companies.length) {
+            // First account bootstraps the main administrator; no company yet.
+            document.getElementById('companySelectWrap').classList.add('d-none');
+            return;
+        }
+        select.innerHTML = companies
+            .map(c => `<option value="${c._id}">${c.company_name}</option>`)
+            .join('');
+    } catch (_) {}
+})();
+
 async function handleRegister(e) {
     e.preventDefault();
     const form = e.target;
@@ -56,6 +78,7 @@ async function handleRegister(e) {
             email: form.email.value,
             phone: form.phone.value,
             password: form.password.value,
+            company_id: form.company_id ? form.company_id.value : undefined,
         }),
     });
     const data = await res.json();

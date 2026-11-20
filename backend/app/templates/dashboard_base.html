@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_nav.html" import nav_items %}
 
 {% block body %}
 <div class="d-flex" style="min-height: 100vh;">
@@ -18,86 +19,7 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-3">
-            <ul class="nav nav-pills flex-column mb-auto">
-                {% if user.role == 'admin' %}
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'dashboard' }}" href="/dashboard" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-grid-1x2-fill me-2"></i>{{ _('dashboard') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'services' }}" href="/services" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-gear me-2"></i>{{ _('services') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'documents' }}" href="/documents" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-file-earmark-pdf me-2"></i>{{ _('documents') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'tasks' }}" href="/tasks" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-list-task me-2"></i>{{ _('task_management') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'activities' }}" href="/activities" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-activity me-2"></i>{{ _('activity_management') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'notifications' }}" href="/notifications" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-bell me-2"></i>{{ _('notifications') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'messaging' }}" href="/messaging" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-chat-dots me-2"></i>{{ _('messaging') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'users' }}" href="/users" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-people me-2"></i>{{ _('users') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'reports' }}" href="/reports" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-file-earmark-pdf me-2"></i>{{ _('reports') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'audit' }}" href="/audit" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-clock-history me-2"></i>{{ _('audit_logs') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'requests' }}" href="/requests" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-chat-square-text me-2"></i>{{ _('request_management') }}
-                    </a>
-                </li>
-                {% elif user.role == 'employee' %}
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'employee_dashboard' }}" href="/employee-dashboard" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-grid-1x2-fill me-2"></i>{{ _('dashboard') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'activities' }}" href="/activities" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-activity me-2"></i>{{ _('activity_management') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'notifications' }}" href="/notifications" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-bell me-2"></i>{{ _('notifications') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link text-white {{ 'active' if active_page == 'messaging' }}" href="/messaging" data-bs-dismiss="offcanvas">
-                        <i class="bi bi-chat-dots me-2"></i>{{ _('messaging') }}
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
+            {{ nav_items(active_page, user, _, dark=true) }}
             <hr class="border-white opacity-25">
             <a class="btn btn-outline-light btn-sm w-100" href="#" onclick="logout()">
                 <i class="bi bi-box-arrow-right me-1"></i>{{ _('sign_out') }}
@@ -113,88 +35,9 @@
             {% endif %}
             {{ company.company_name if company else _('app_name') }}
         </a>
-        <ul class="nav nav-pills flex-column mb-auto">
-            {% if user.role == 'admin' %}
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'dashboard' }}" href="/dashboard">
-                    <i class="bi bi-grid-1x2-fill me-2"></i>{{ _('dashboard') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'services' }}" href="/services">
-                    <i class="bi bi-gear me-2"></i>{{ _('services') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'documents' }}" href="/documents">
-                    <i class="bi bi-file-earmark-pdf me-2"></i>{{ _('documents') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'tasks' }}" href="/tasks">
-                    <i class="bi bi-list-task me-2"></i>{{ _('task_management') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'activities' }}" href="/activities">
-                    <i class="bi bi-activity me-2"></i>{{ _('activity_management') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'notifications' }}" href="/notifications">
-                    <i class="bi bi-bell me-2"></i>{{ _('notifications') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'messaging' }}" href="/messaging">
-                    <i class="bi bi-chat-dots me-2"></i>{{ _('messaging') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'users' }}" href="/users">
-                    <i class="bi bi-people me-2"></i>{{ _('users') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'reports' }}" href="/reports">
-                    <i class="bi bi-file-earmark-pdf me-2"></i>{{ _('reports') }}
-                </a>
-            </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ 'active' if active_page == 'audit' }}" href="/audit">
-                        <i class="bi bi-clock-history me-2"></i>{{ _('audit_logs') }}
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ 'active' if active_page == 'requests' }}" href="/requests">
-                        <i class="bi bi-chat-square-text me-2"></i>{{ _('request_management') }}
-                    </a>
-                </li>
-            {% elif user.role == 'employee' %}
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'employee_dashboard' }}" href="/employee-dashboard">
-                    <i class="bi bi-grid-1x2-fill me-2"></i>{{ _('dashboard') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'activities' }}" href="/activities">
-                    <i class="bi bi-activity me-2"></i>{{ _('activity_management') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'notifications' }}" href="/notifications">
-                    <i class="bi bi-bell me-2"></i>{{ _('notifications') }}
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ 'active' if active_page == 'messaging' }}" href="/messaging">
-                    <i class="bi bi-chat-dots me-2"></i>{{ _('messaging') }}
-                </a>
-            </li>
-            {% endif %}
-        </ul>
+        {{ nav_items(active_page, user, _, dark=false) }}
         <hr>
-        {% if user.role == 'employee' or user.role == 'customer' %}
+        {% if user.role == 'local_employee' or user.role == 'customer' %}
         <div class="text-center">
             <a class="btn btn-outline-light btn-sm w-100" href="#" onclick="logout()">
                 <i class="bi bi-box-arrow-right me-1"></i>{{ _('sign_out') }}
@@ -224,14 +67,14 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><span class="dropdown-item-text text-muted">{{ user.role }}</span></li>
-                    {% if user.role == 'admin' %}
+                    {% if user.role == 'local_admin' %}
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="openCompanySettings();return false">
                         <i class="bi bi-building-gear me-1"></i>{{ _('settings') }}
                     </a></li>
                     {% endif %}
                     <li><hr class="dropdown-divider"></li>
-                    {% if user.role == 'admin' %}
+                    {% if user.role == 'local_admin' %}
                     <li><a class="dropdown-item" href="#" onclick="openChangePassword();return false">
                         <i class="bi bi-key me-1"></i>{{ _('change_password') }}
                     </a></li>
@@ -537,7 +380,7 @@ async function handleHeaderSend(e) {
     return false;
 }
 
-{% if user and user.role == 'admin' %}
+{% if user and user.role == 'local_admin' %}
 document.addEventListener('DOMContentLoaded', checkCompanySetup);
 async function checkCompanySetup() {
     try {

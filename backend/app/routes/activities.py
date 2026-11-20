@@ -5,24 +5,26 @@ from bson import ObjectId
 from app.database import get_db
 from app.services.audit_service import AuditService
 from app.socketio_server import notify_user, notify_badge_update
-from functools import wraps
+from app.tenancy import (
+    CUSTOMER,
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
+    company_scope,
+    current_company_id,
+    current_role,
+    current_user_id,
+    local_admin_required,
+    local_staff_required,
+    role_required,
+    to_object_id,
+)
 
 activities_bp = Blueprint("activities", __name__, url_prefix="/api/activities")
 
 
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        claims = get_jwt()
-        if claims.get("role") != "admin":
-            return jsonify({"error": "Admin access required"}), 403
-        return f(*args, **kwargs)
-    return wrapper
-
-
 @activities_bp.route("/", methods=["POST"])
 @jwt_required()
-@admin_required
+@local_admin_required
 def create_activity():
     db = get_db()
     data = request.get_json()
@@ -36,11 +38,11 @@ def create_activity():
         return jsonify({"error": "Title is required"}), 400
     if not assigned_to:
         return jsonify({"error": "Assigned employee is required"}), 400
-    if not db.users.find_one({"_id": ObjectId(assigned_to), "role": "employee"}):
-        return jsonify({"error": "Assigned user must be an employee"}), 400
+    if not db.users.find_one(company_scope({"_id": to_object_id(assigned_to), "role": LOCAL_EMPLOYEE})):
+        return jsonify({"error": "Assigned user must be an employee of your company"}), 400
     if not customer_id:
         return jsonify({"error": "Customer is required"}), 400
-    if not db.users.find_one({"_id": ObjectId(customer_id), "role": "customer"}):
+    if not db.users.find_one(company_scope({"_id": to_object_id(customer_id), "role": CUSTOMER})):
         return jsonify({"error": "Customer not found"}), 400
 
     admin_id = get_jwt_identity()
@@ -57,6 +59,7 @@ def create_activity():
         "task_ids": [ObjectId(tid) for tid in task_ids],
         "status": "pending",
         "notes": notes or None,
+        "company_id": current_company_id(),
         "created_at": now,
         "updated_at": now,
     }
@@ -65,6 +68,7 @@ def create_activity():
 
     notif_id = db.notifications.insert_one({
         "user_id": ObjectId(assigned_to),
+        "company_id": current_company_id(),
         "type": "activity_assigned",
         "title": "New Activity Assigned",
         "message": f"You have been assigned a new activity: {title}",
@@ -122,12 +126,14 @@ def list_activities():
     claims = get_jwt()
     role = claims.get("role")
 
-    query = {}
+    query = company_scope()
     assigned_to_filter = request.args.get("assigned_to")
     if assigned_to_filter:
         query["assigned_to"] = ObjectId(assigned_to_filter)
-    elif role == "employee":
+    elif role == LOCAL_EMPLOYEE:
         query["assigned_to"] = ObjectId(identity)
+    elif role == CUSTOMER:
+        query["customer_id"] = ObjectId(identity)
 
     pipeline = [
         {"$match": query},
@@ -192,8 +198,11 @@ def list_activities():
 @jwt_required()
 def get_activity(activity_id):
     db = get_db()
+    match = company_scope({"_id": to_object_id(activity_id)})
+    if current_role() == CUSTOMER:
+        match["customer_id"] = ObjectId(get_jwt_identity())
     pipeline = [
-        {"$match": {"_id": ObjectId(activity_id)}},
+        {"$match": match},
         {
             "$lookup": {
                 "from": "users",
@@ -253,20 +262,20 @@ def update_activity_status(activity_id):
     if new_status not in ("in_progress", "completed", "cancelled"):
         return jsonify({"error": "Invalid status"}), 400
 
-    activity = db.activities.find_one({"_id": ObjectId(activity_id)})
+    activity = db.activities.find_one(company_scope({"_id": to_object_id(activity_id)}))
     if not activity:
         return jsonify({"error": "Activity not found"}), 404
 
     current = activity.get("status")
-    role = claims.get("role")
+    role = current_role()
 
-    if role != "admin" and str(activity["assigned_to"]) != identity:
+    if role != LOCAL_ADMIN and str(activity["assigned_to"]) != identity:
         return jsonify({"error": "Forbidden"}), 403
 
     if current == "completed":
         return jsonify({"error": "Activity is already completed"}), 400
 
-    if current == "pending" and new_status != "in_progress" and role != "admin":
+    if current == "pending" and new_status != "in_progress" and role != LOCAL_ADMIN:
         return jsonify({"error": "Must accept before completing"}), 400
 
     if current == "in_progress" and new_status == "in_progress":
@@ -415,7 +424,7 @@ def send_notification():
 
     if not target_user_id or not message:
         return jsonify({"error": "user_id and message are required"}), 400
-    if not db.users.find_one({"_id": ObjectId(target_user_id)}):
+    if not db.users.find_one(company_scope({"_id": to_object_id(target_user_id)})):
         return jsonify({"error": "User not found"}), 404
 
     sender = db.users.find_one({"_id": ObjectId(identity)}, {"full_name": 1})
@@ -424,6 +433,7 @@ def send_notification():
     now = datetime.now(timezone.utc)
     nid = db.notifications.insert_one({
         "user_id": ObjectId(target_user_id),
+        "company_id": current_company_id(),
         "type": "manual",
         "title": title,
         "message": f"From {sender_name}: {message}",
@@ -461,12 +471,12 @@ def update_activity_note(activity_id):
     identity = get_jwt_identity()
     claims = get_jwt()
 
-    activity = db.activities.find_one({"_id": ObjectId(activity_id)})
+    activity = db.activities.find_one(company_scope({"_id": to_object_id(activity_id)}))
     if not activity:
         return jsonify({"error": "Activity not found"}), 404
 
-    role = claims.get("role")
-    if role != "admin" and str(activity["assigned_to"]) != identity:
+    role = current_role()
+    if role != LOCAL_ADMIN and str(activity["assigned_to"]) != identity:
         return jsonify({"error": "Forbidden"}), 403
 
     data = request.get_json()
@@ -491,10 +501,10 @@ def update_activity_note(activity_id):
 
 @activities_bp.route("/<activity_id>", methods=["DELETE"])
 @jwt_required()
-@admin_required
+@local_admin_required
 def delete_activity(activity_id):
     db = get_db()
-    activity = db.activities.find_one({"_id": ObjectId(activity_id)})
+    activity = db.activities.find_one(company_scope({"_id": to_object_id(activity_id)}))
     if not activity:
         return jsonify({"error": "Activity not found"}), 404
 

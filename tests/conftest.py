@@ -37,8 +37,33 @@ def client(db):
 
 
 @pytest.fixture()
+def make_company(db):
+    def _make(name="Acme", code="acme"):
+        now = datetime.now(timezone.utc)
+        company = {
+            "_id": ObjectId(),
+            "company_name": name,
+            "code": code,
+            "slogan": "",
+            "logo": None,
+            "address": "",
+            "email": "",
+            "phone": "",
+            "social_links": {},
+            "tax_id": "",
+            "is_active": True,
+            "created_at": now,
+            "updated_at": now,
+        }
+        db.companies.insert_one(company)
+        return company
+
+    return _make
+
+
+@pytest.fixture()
 def make_user(db):
-    def _make(role="customer", username="user"):
+    def _make(role="customer", username="user", company_id=None):
         now = datetime.now(timezone.utc)
         user = {
             "_id": ObjectId(),
@@ -49,6 +74,7 @@ def make_user(db):
             "full_name": username.title(),
             "phone": None,
             "is_active": True,
+            "company_id": company_id,
             "created_at": now,
             "updated_at": now,
         }
@@ -66,7 +92,10 @@ def make_token():
         with flask_app.app_context():
             return create_access_token(
                 identity=str(user["_id"]),
-                additional_claims={"role": user["role"]},
+                additional_claims={
+                    "role": user["role"],
+                    "company_id": str(user["company_id"]) if user.get("company_id") else "",
+                },
             )
 
     return _make

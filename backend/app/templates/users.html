@@ -15,8 +15,7 @@
         <div class="d-flex gap-2 mb-3">
             <select id="filterRole" class="form-select form-select-sm" style="width:auto;" onchange="loadUsers()">
                 <option value="">{{ _('filter') }} {{ _('role') }}</option>
-                <option value="admin">{{ _('admin') }}</option>
-                <option value="employee">{{ _('employee') }}</option>
+                <option value="local_employee">{{ _('local_employee') }}</option>
                 <option value="customer">{{ _('customer') }}</option>
             </select>
             <select id="filterStatus" class="form-select form-select-sm" style="width:auto;" onchange="loadUsers()">
@@ -81,8 +80,7 @@
                     <div class="mb-3">
                         <label class="form-label">{{ _('role') }} *</label>
                         <select name="role" class="form-select" required>
-                            <option value="admin">{{ _('admin') }}</option>
-                            <option value="employee">{{ _('employee') }}</option>
+                            <option value="local_employee">{{ _('local_employee') }}</option>
                             <option value="customer">{{ _('customer') }}</option>
                         </select>
                     </div>
@@ -161,7 +159,7 @@ async function loadUsers() {
             <td><strong>${u.full_name}</strong></td>
             <td>${u.username}</td>
             <td>${u.email}</td>
-            <td><span class="badge rounded-pill bg-${u.role === 'admin' ? 'danger' : u.role === 'employee' ? 'primary' : 'secondary'}">${u.role}</span></td>
+            <td><span class="badge rounded-pill bg-${u.role === 'local_admin' ? 'danger' : u.role === 'local_employee' ? 'primary' : 'secondary'}">${u.role}</span></td>
             <td><span class="badge rounded-pill bg-${u.is_active ? 'success' : 'danger'}">${u.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
             <td class="table-actions">
                 <button class="btn btn-sm btn-outline-info" onclick="viewUser('${u._id}')" title="{{ _('view') }}">
@@ -186,7 +184,7 @@ async function viewUser(id) {
     const statusHtml = u.is_active
         ? '<span class="badge bg-success">{{ _('active') }}</span>'
         : '<span class="badge bg-danger">{{ _('inactive') }}</span>';
-    const roleBadge = `<span class="badge rounded-pill bg-${u.role === 'admin' ? 'danger' : u.role === 'employee' ? 'primary' : 'secondary'}">${u.role}</span>`;
+    const roleBadge = `<span class="badge rounded-pill bg-${u.role === 'local_admin' ? 'danger' : u.role === 'local_employee' ? 'primary' : 'secondary'}">${u.role}</span>`;
 
     document.getElementById('viewUserDetails').innerHTML = `
         <div class="col-md-6">
@@ -205,7 +203,7 @@ async function viewUser(id) {
     `;
 
     const activitiesSection = document.getElementById('viewUserActivities');
-    if (u.role === 'employee') {
+    if (u.role === 'local_employee') {
         activitiesSection.classList.remove('d-none');
         const tbody = document.getElementById('viewActivitiesBody');
         tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">{{ _('loading') }}</td></tr>';
