@@ -165,3 +165,28 @@ document.addEventListener('DOMContentLoaded', () => {
     localStorage.setItem('lang', lang);
     if (isAuthenticated()) initSocketIO();
 });
+
+// Give each modal that opens a fresh backdrop: a random trianglify image for
+// its header, body and footer, never repeating one within the same modal.
+const MODAL_BACKDROPS = ['trianglify1.png', 'trianglify2.png', 'trianglify3.png',
+                         'trianglify4.png', 'trianglify5.png', 'trianglify6.png',
+                         'trianglify7.png', 'trianglify8.png', 'trianglify9.png',
+                         'trianglify10.png'];
+
+function pickModalBackdrops(count) {
+    const pool = MODAL_BACKDROPS.slice();
+    for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool.slice(0, count);
+}
+
+document.addEventListener('show.bs.modal', (event) => {
+    const content = event.target.querySelector('.modal-content');
+    if (!content) return;
+    const [header, body, footer] = pickModalBackdrops(3);
+    content.style.setProperty('--modal-header-bg', `url("/static/img/${header}")`);
+    content.style.setProperty('--modal-body-bg', `url("/static/img/${body}")`);
+    content.style.setProperty('--modal-footer-bg', `url("/static/img/${footer}")`);
+});

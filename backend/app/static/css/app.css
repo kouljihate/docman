@@ -570,3 +570,33 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
         max-height: 300px;
     }
 }
+
+/* Every modal picks random trianglify artwork (see app.js): the header, body
+   and footer each get their own image, behind a white veil that keeps form
+   text readable. */
+.modal-header {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
+        var(--modal-header-bg, url('/static/img/trianglify1.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.modal-body {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.90), rgba(255, 255, 255, 0.90)),
+        var(--modal-body-bg, url('/static/img/trianglify2.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.modal-footer {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.80), rgba(255, 255, 255, 0.80)),
+        var(--modal-footer-bg, url('/static/img/trianglify3.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}

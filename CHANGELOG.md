@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.6.0] - 2026-11-20
+
+### Added
+- Every modal now has the trianglify artwork as its background. Each time a
+  modal opens, its header, body and footer are given three different images
+  from the bundled set, under a white veil so forms stay readable.
+
 ## [3.5.2] - 2026-11-20
 
 ### Changed
