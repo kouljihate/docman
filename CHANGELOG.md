@@ -4,6 +4,15 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.6.2] - 2026-11-20
+
+### Added
+- `test/generate_customers.py`: bulk customer seeding tool with Moroccan
+  names, phones and CINs. It posts to `POST /api/customers/bulk` as a local
+  admin, or writes the same documents directly (`--via mongo`) when no
+  local-admin password is available; supports `--count`, `--dry-run` and
+  `--company` (database `cse` was seeded with 100 customers).
+
 ## [3.6.1] - 2026-11-20
 
 ### Fixed
