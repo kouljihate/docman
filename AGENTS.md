@@ -35,7 +35,9 @@ bump and tag.
 
 - Cloud database: copy `.env.example` to `.env`, set `MONGO_URI` to the Atlas
   connection string (keep the `/cse` database name in the path), then
-  `docker compose up --build` → http://localhost:5000
+  `docker compose up --build` → http://localhost:5000. Percent-encode special
+  characters in the password (`@` → `%40`) and quote the value, or an unquoted
+  `&` in the query string breaks shell sourcing of `.env`.
 - Bundled local MongoDB: `docker compose --profile local-db up --build` (no
   `.env` needed; the `mongo` service is an opt-in `local-db` profile). Stop it
   with `docker compose --profile local-db down`.

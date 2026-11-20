@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.4.1] - 2026-11-20
+
+### Fixed
+- Documented how to write the Atlas connection string into `.env`: special
+  characters in the password must be percent-encoded (`@` → `%40`) and the
+  value quoted, otherwise an unquoted `&` in the query string truncates the
+  line when the file is sourced by a shell.
+
 ## [3.4.0] - 2026-11-20
 
 ### Added
