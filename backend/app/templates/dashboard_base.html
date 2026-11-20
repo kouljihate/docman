@@ -381,17 +381,6 @@ async function handleHeaderSend(e) {
 }
 
 {% if user and user.role == 'local_admin' %}
-document.addEventListener('DOMContentLoaded', checkCompanySetup);
-async function checkCompanySetup() {
-    try {
-        const res = await fetch('/api/company/settings', {
-        });
-        if (res.status === 404) {
-            new bootstrap.Modal(document.getElementById('companySetupModal')).show();
-        }
-    } catch (_) {}
-}
-
 async function openCompanySettings() {
     const form = document.getElementById('companySetupForm');
     const errorEl = document.getElementById('companySetupError');

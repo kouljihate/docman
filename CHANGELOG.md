@@ -4,6 +4,15 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.1.1] - 2026-11-20
+
+### Fixed
+- Removed the Company Setup modal that appeared automatically on the login and
+  registration pages (and for local admins) when no company record existed. It
+  blocked the auth screen on a fresh install, and companies are now created by
+  the main admin from the Companies page. The company settings modal itself is
+  still available from the user menu.
+
 ## [3.1.0] - 2026-11-20
 
 ### Added
