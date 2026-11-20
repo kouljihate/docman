@@ -4,6 +4,12 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [2.1.1] - 2026-11-20
+
+### Changed
+- The project now lives in the `kouljihate/docman` GitHub repository
+  (previously `kouljihate/cse`); the full history and tags were pushed there.
+
 ## [2.1.0] - 2026-11-20
 
 Security release fixing the findings from the code review.
