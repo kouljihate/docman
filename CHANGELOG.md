@@ -4,6 +4,25 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.4.0] - 2026-11-20
+
+### Added
+- `.env.example` documenting `MONGO_URI` and the other stack settings, so the
+  app can be pointed at a cloud MongoDB (Atlas) without editing the compose
+  file.
+- `backend/copy_to_atlas.py`: copies every local collection (documents and their
+  indexes, `_id` values preserved) into a cloud database, with a dry run, an
+  explicit `--yes` gate, `--drop`/`--append` handling for a non-empty target and
+  a document-count check afterwards.
+
+### Changed
+- The bundled `mongo` service is now an opt-in Compose profile (`local-db`) and
+  the app's dependency on it is `required: false`, so the stack can run against
+  a cloud database alone: `docker compose up --build` (cloud) versus
+  `docker compose --profile local-db up --build` (local).
+- `MONGO_URI` in `docker-compose.yml` is now read from the environment
+  (`.env`) instead of being hardcoded to the local container.
+
 ## [3.3.0] - 2026-11-20
 
 ### Added

@@ -33,9 +33,27 @@ bump and tag.
 
 ## Running the app
 
-- Local Docker stack (app + MongoDB): `docker compose up --build` → http://localhost:5000
+- Cloud database: copy `.env.example` to `.env`, set `MONGO_URI` to the Atlas
+  connection string (keep the `/cse` database name in the path), then
+  `docker compose up --build` → http://localhost:5000
+- Bundled local MongoDB: `docker compose --profile local-db up --build` (no
+  `.env` needed; the `mongo` service is an opt-in `local-db` profile). Stop it
+  with `docker compose --profile local-db down`.
 - Optional default admin: `docker compose exec app python seed.py` (`admin` / `admin123`)
 - Version check: `curl http://localhost:5000/api/health` → `{"status":"ok","db":"connected","version":"..."}`
+
+To move existing local data into a cloud database, keep the local stack up and
+run the copy script (target from `MONGO_TARGET_URI` or `--target`):
+
+```bash
+docker compose --profile local-db up -d
+docker compose exec app python copy_to_atlas.py --target "mongodb+srv://.../cse" --dry-run
+docker compose exec app python copy_to_atlas.py --target "mongodb+srv://.../cse" --yes
+```
+
+It copies every collection and its indexes, refusing to overwrite a non-empty
+target unless `--drop` (replace) or `--append` is passed. Uploaded files in
+`backend/documents/` are not part of the copy.
 
 ## Tests
 

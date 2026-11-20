@@ -1,9 +1,18 @@
-# Local stack for Document Manager: the web app plus its MongoDB.
-#   docker compose up --build        -> http://localhost:5000
-#   docker compose exec app python seed.py   (optional default admin: admin / admin123)
+# Document Manager stack: the web app, plus an optional local MongoDB.
+#
+#   Cloud database (set MONGO_URI in .env):
+#     docker compose up --build
+#
+#   Bundled local MongoDB (no .env needed):
+#     docker compose --profile local-db up --build
+#     docker compose --profile local-db down     # also stops the mongo container
+#
+# The app no longer waits on a database it is not using: the mongo dependency is
+# marked `required: false`, so it is skipped when the local-db profile is off.
 services:
   mongo:
     image: mongo:7
+    profiles: ["local-db"]
     restart: unless-stopped
     volumes:
       - mongo_data:/data/db
@@ -18,14 +27,17 @@ services:
     build:
       context: .
       args:
-        APP_VERSION: ${APP_VERSION:-3.3.0}
-    image: document-manager:${APP_VERSION:-3.3.0}
+        APP_VERSION: ${APP_VERSION:-3.4.0}
+    image: document-manager:${APP_VERSION:-3.4.0}
     restart: unless-stopped
     depends_on:
       mongo:
         condition: service_healthy
+        required: false
     environment:
-      MONGO_URI: mongodb://mongo:27017/cse
+      # Point this at any MongoDB (e.g. an Atlas cluster) by setting MONGO_URI
+      # in .env; the bundled mongo service is used when it is left unset.
+      MONGO_URI: ${MONGO_URI:-mongodb://mongo:27017/cse}
       # Change this in any shared environment.
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-super-secret-key-change-in-production}
       JWT_ACCESS_TOKEN_EXPIRES: ${JWT_ACCESS_TOKEN_EXPIRES:-86400}
