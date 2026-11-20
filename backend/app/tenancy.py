@@ -2,7 +2,9 @@
 
 Four profiles exist:
 
-- ``main_admin``    - platform owner: companies, global dashboard, audit logs.
+- ``main_admin``    - platform owner: companies, every tenant user (local
+                      admins, employees, customers), global dashboard, audit
+                      logs.
 - ``local_admin``   - manages one company: its users, customers, services,
                       documents, tasks, activities, messaging and reports.
 - ``local_employee``- company staff: tasks, activities, documents, reports,
@@ -49,6 +51,9 @@ def current_user_id():
 
 
 def to_object_id(value):
+    # ObjectId(None) silently invents a new id, so reject empty input first.
+    if not value:
+        return None
     try:
         return ObjectId(value)
     except (InvalidId, TypeError):

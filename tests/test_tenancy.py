@@ -129,6 +129,61 @@ def test_customer_request_is_routed_to_own_local_admin(
     assert client.get("/api/requests/").get_json() == []
 
 
+def test_main_admin_manages_users_of_every_company(client, db, make_token, make_user, make_company):
+    acme = make_company("Acme", "acme")
+    beta = make_company("Beta", "beta")
+    make_user("local_admin", "acme-admin", acme["_id"])
+    make_user("local_employee", "acme-emp", acme["_id"])
+    make_user("customer", "beta-customer", beta["_id"])
+    main = make_user("main_admin", "root")
+    other_main = make_user("main_admin", "root2")
+
+    _login(client, make_token, main)
+    listed = client.get("/api/users/").get_json()
+    usernames = {u["username"] for u in listed}
+    assert usernames == {"acme-admin", "acme-emp", "beta-customer"}
+
+    # Main admins are not manageable through the tenant user API.
+    assert client.get(f"/api/users/{other_main['_id']}").status_code == 404
+    assert client.delete(f"/api/users/{other_main['_id']}").status_code == 404
+
+    created = client.post(
+        "/api/users/",
+        json={
+            "username": "beta-admin",
+            "email": "beta-admin@example.com",
+            "password": "secret123",
+            "full_name": "Beta Admin",
+            "role": "local_admin",
+            "company_id": str(beta["_id"]),
+        },
+    )
+    assert created.status_code == 201
+    assert created.get_json()["company_id"] == str(beta["_id"])
+
+    filtered = client.get(f"/api/users/?company_id={beta['_id']}").get_json()
+    assert {u["username"] for u in filtered} == {"beta-customer", "beta-admin"}
+
+    assert client.get("/users").status_code == 200
+
+
+def test_local_admin_cannot_create_local_admin(client, make_token, make_user, make_company):
+    company = make_company()
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, admin)
+    resp = client.post(
+        "/api/users/",
+        json={
+            "username": "new-admin",
+            "email": "new-admin@example.com",
+            "password": "secret123",
+            "full_name": "New Admin",
+            "role": "local_admin",
+        },
+    )
+    assert resp.status_code == 403
+
+
 def test_audit_logs_are_main_admin_only(client, make_token, make_user, make_company):
     company = make_company()
     admin = make_user("local_admin", "acme-admin", company["_id"])

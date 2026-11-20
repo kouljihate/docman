@@ -56,7 +56,7 @@ The app is multi-tenant. Roles (`backend/app/tenancy.py`):
 
 | Profile | Scope |
 | --- | --- |
-| `main_admin` | Platform: companies, global dashboard, audit logs |
+| `main_admin` | Platform: companies, all users of every company (local admins, employees, customers), global dashboard, audit logs |
 | `local_admin` | One company: customers, services, documents, tasks, activities, employees, messaging, reports, notifications, requests |
 | `local_employee` | One company: tasks, activities, documents, reports, messaging, notifications, requests |
 | `customer` | Own affairs/activities; requests go to their own local admin |

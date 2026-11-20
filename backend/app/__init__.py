@@ -264,7 +264,7 @@ def create_app():
         return render_template("services.html", active_page="services")
 
     @app.route("/users")
-    @page_roles(LOCAL_ADMIN)
+    @page_roles(MAIN_ADMIN, LOCAL_ADMIN)
     def users_page():
         return render_template("users.html", active_page="users")
 

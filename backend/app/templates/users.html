@@ -15,6 +15,7 @@
         <div class="d-flex gap-2 mb-3">
             <select id="filterRole" class="form-select form-select-sm" style="width:auto;" onchange="loadUsers()">
                 <option value="">{{ _('filter') }} {{ _('role') }}</option>
+                {% if user_role == 'main_admin' %}<option value="local_admin">{{ _('local_admin') }}</option>{% endif %}
                 <option value="local_employee">{{ _('local_employee') }}</option>
                 <option value="customer">{{ _('customer') }}</option>
             </select>
@@ -35,12 +36,13 @@
                         <th>{{ _('username') }}</th>
                         <th>{{ _('email') }}</th>
                         <th>{{ _('role') }}</th>
+                        {% if user_role == 'main_admin' %}<th>{{ _('company_name') }}</th>{% endif %}
                         <th>{{ _('status') }}</th>
                         <th>{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="{{ 7 if user_role == 'main_admin' else 6 }}" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -80,10 +82,17 @@
                     <div class="mb-3">
                         <label class="form-label">{{ _('role') }} *</label>
                         <select name="role" class="form-select" required>
+                            {% if user_role == 'main_admin' %}<option value="local_admin">{{ _('local_admin') }}</option>{% endif %}
                             <option value="local_employee">{{ _('local_employee') }}</option>
                             <option value="customer">{{ _('customer') }}</option>
                         </select>
                     </div>
+                    {% if user_role == 'main_admin' %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('company_name') }} *</label>
+                        <select name="company_id" id="companySelect" class="form-select" required></select>
+                    </div>
+                    {% endif %}
                     <div class="mb-3 form-check">
                         <input type="checkbox" name="is_active" class="form-check-input" id="userIsActive" checked>
                         <label class="form-check-label" for="userIsActive">{{ _('active') }}</label>
@@ -138,8 +147,25 @@
 
 {% block extra_scripts %}
 <script>
+const IS_MAIN_ADMIN = {{ 'true' if user_role == 'main_admin' else 'false' }};
+const COLSPAN = IS_MAIN_ADMIN ? 7 : 6;
 let usersData = [];
+let companiesData = [];
 loadUsers();
+if (IS_MAIN_ADMIN) loadCompanies();
+
+async function loadCompanies() {
+    companiesData = await apiRequest('/companies/') || [];
+    const select = document.getElementById('companySelect');
+    if (select) {
+        select.innerHTML = companiesData.map(c => `<option value="${c._id}">${c.company_name}</option>`).join('');
+    }
+}
+
+function companyName(id) {
+    const c = companiesData.find(x => x._id === id);
+    return c ? c.company_name : '-';
+}
 
 async function loadUsers() {
     const role = document.getElementById('filterRole').value;
@@ -151,7 +177,7 @@ async function loadUsers() {
     usersData = data;
     const tbody = document.getElementById('usersTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_users') }}</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${COLSPAN}" class="text-center text-muted">{{ _('no_users') }}</td></tr>`;
         return;
     }
     tbody.innerHTML = data.map(u => `
@@ -160,6 +186,7 @@ async function loadUsers() {
             <td>${u.username}</td>
             <td>${u.email}</td>
             <td><span class="badge rounded-pill bg-${u.role === 'local_admin' ? 'danger' : u.role === 'local_employee' ? 'primary' : 'secondary'}">${u.role}</span></td>
+            ${IS_MAIN_ADMIN ? `<td>${companyName(u.company_id)}</td>` : ''}
             <td><span class="badge rounded-pill bg-${u.is_active ? 'success' : 'danger'}">${u.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
             <td class="table-actions">
                 <button class="btn btn-sm btn-outline-info" onclick="viewUser('${u._id}')" title="{{ _('view') }}">
@@ -262,6 +289,9 @@ async function editUser(id) {
     document.getElementById('passwordLabel').style.display = 'none';
     document.getElementById('userForm').querySelector('[name=phone]').value = data.phone || '';
     document.getElementById('userForm').querySelector('[name=role]').value = data.role || 'customer';
+    if (IS_MAIN_ADMIN && document.getElementById('companySelect')) {
+        document.getElementById('companySelect').value = data.company_id || '';
+    }
     document.getElementById('userForm').querySelector('[name=is_active]').checked = data.is_active !== false;
     document.getElementById('userError').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('userModal')).show();
@@ -282,6 +312,7 @@ async function handleUserSubmit(e) {
         role: form.role.value,
         is_active: form.is_active.checked,
     };
+    if (IS_MAIN_ADMIN && form.company_id) payload.company_id = form.company_id.value;
     if (editId) {
         if (form.password.value) payload.password = form.password.value;
         const data = await apiRequest('/users/' + editId, { method: 'PUT', body: JSON.stringify(payload) });

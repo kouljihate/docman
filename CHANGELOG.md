@@ -4,6 +4,21 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.1.0] - 2026-11-20
+
+### Added
+- The main administrator now has the **Users** page and platform-wide user
+  management: list every tenant user across all companies, filter by role,
+  status and company, create local admins, employees and customers in any
+  company, edit their details/role, move them between companies and delete
+  them. Main-admin accounts themselves are not editable from this page.
+
+### Changed
+- `/users` and `/api/users` are open to the main admin as well as local admins;
+  a local admin still only manages their own company's employees and customers.
+- User API responses include `company_id` so the main admin can see which
+  company each account belongs to.
+
 ## [3.0.0] - 2026-11-20
 
 Multi-company (tenant) release with four profiles. **Breaking:** roles are now

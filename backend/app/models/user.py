@@ -26,6 +26,8 @@ class UserUpdate(BaseModel):
     phone: Optional[str] = None
     is_active: Optional[bool] = None
     role: Optional[ROLE_VALUES] = None
+    # Only the main admin may move a user to another company.
+    company_id: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -41,6 +43,7 @@ class UserResponse(BaseModel):
     full_name: str
     phone: Optional[str] = None
     is_active: bool
+    company_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -50,4 +53,6 @@ class UserResponse(BaseModel):
         if isinstance(data, dict):
             if "_id" in data and isinstance(data["_id"], ObjectId):
                 data["_id"] = str(data["_id"])
+            if isinstance(data.get("company_id"), ObjectId):
+                data["company_id"] = str(data["company_id"])
         return data
