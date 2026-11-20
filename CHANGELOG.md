@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.5.0] - 2026-11-20
+
+### Added
+- Self-hosted default fonts: Comfortaa (300/400/700) for Latin text and
+  VIP-Rawy (400/700) for Arabic, loaded from `/static/fonts` instead of Google
+  Fonts.
+- Random trianglify backdrop on every page: one of the ten bundled images in
+  `/static/img` is chosen on each load and shown behind a light veil, with the
+  sign-in card using a translucent overlay so it stays readable.
+
 ## [3.4.1] - 2026-11-20
 
 ### Fixed

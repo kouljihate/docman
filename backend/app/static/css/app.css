@@ -1,16 +1,53 @@
 @font-face {
-    font-family: 'Adarghal';
-    src: url('/static/fonts/adarghal.ttf') format('truetype');
-    font-weight: normal;
+    font-family: 'Comfortaa';
+    src: url('../fonts/Comfortaa-Light.ttf') format('truetype');
+    font-weight: 300;
     font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Comfortaa';
+    src: url('../fonts/Comfortaa-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Comfortaa';
+    src: url('../fonts/Comfortaa-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'VIP-Rawy';
+    src: url('../fonts/VIP-Rawy-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'VIP-Rawy';
+    src: url('../fonts/VIP-Rawy-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
 }
 
 :root {
-    --cse-font: 'Comfortaa', sans-serif;
+    /* English default: Comfortaa, with VIP-Rawy for Arabic glyphs. */
+    --cse-font: 'Comfortaa', 'VIP-Rawy', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --bs-body-font-family: var(--cse-font);
+    --bs-font-sans-serif: var(--cse-font);
 }
 
 :root:lang(ar) {
-    --cse-font: 'Adarghal', serif;
+    /* Arabic default: VIP-Rawy. */
+    --cse-font: 'VIP-Rawy', 'Comfortaa', serif;
     --num-font: 'Comfortaa', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     font-size: 1.1rem;
 }
@@ -48,6 +85,15 @@ body {
     display: flex;
     flex-direction: column;
     font-family: var(--cse-font) !important;
+    /* Random trianglify backdrop, picked per page load by base.html; the light
+       veil keeps text readable over the artwork. */
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.84)),
+        var(--app-bg, url('/static/img/trianglify1.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
@@ -226,7 +272,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #3949ab 100%);
+    /* Translucent so the random backdrop shows through behind the card. */
+    background: linear-gradient(135deg,
+        rgba(26, 35, 126, 0.78) 0%,
+        rgba(40, 53, 147, 0.78) 50%,
+        rgba(57, 73, 171, 0.78) 100%);
 }
 
 .login-card {

@@ -1,3 +1,4 @@
+import mimetypes
 import os
 import sys
 from datetime import datetime, timezone
@@ -17,6 +18,10 @@ from app.tenancy import (
 )
 from app.translations import t as translate
 from config import VERSION, settings
+
+# The self-hosted fonts are TrueType files; some platforms map .ttf to
+# application/octet-stream, which browsers may refuse to load.
+mimetypes.add_type("font/ttf", ".ttf")
 
 jwt = JWTManager()
 

@@ -4,12 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ company.company_name if company else _('app_name') }}{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/static/css/app.css">
+    <script>
+        // Pick one of the bundled trianglify images per page load and expose it
+        // to app.css as the body backdrop.
+        (function () {
+            var images = ['trianglify1.png', 'trianglify2.png', 'trianglify3.png',
+                          'trianglify4.png', 'trianglify5.png', 'trianglify6.png',
+                          'trianglify7.png', 'trianglify8.png', 'trianglify9.png',
+                          'trianglify10.png'];
+            var pick = images[Math.floor(Math.random() * images.length)];
+            document.documentElement.style.setProperty('--app-bg', 'url("/static/img/' + pick + '")');
+        })();
+    </script>
     {% block extra_head %}{% endblock %}
 </head>
 <body>
