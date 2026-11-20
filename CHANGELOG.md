@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.5.1] - 2026-11-20
+
+### Changed
+- Hovering the database icon on the sign-in and registration pages now shows
+  the live connection state ("Database: connected" / "Database: disconnected")
+  instead of the generic "Database Status" label, translated for EN/AR/FR.
+
 ## [3.5.0] - 2026-11-20
 
 ### Added

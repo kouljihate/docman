@@ -22,7 +22,7 @@
                         <a href="?lang=fr" class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == 'fr' }}">FR</a>
                     </div>
                 </div>
-                <span id="db-status" class="db-status-icon" title="{{ _('database_status') }}">
+                <span id="db-status" class="db-status-icon" title="{{ _('database_checking') }}" aria-label="{{ _('database_status') }}">
                     <i class="bi bi-database"></i>
                 </span>
             </div>
@@ -35,18 +35,23 @@
     var dbIcon = document.getElementById('db-status');
     if (!dbIcon) return;
 
+    var dbConnectedText = {{ _('database_connected')|tojson }};
+    var dbDisconnectedText = {{ _('database_disconnected')|tojson }};
+
+    function setDbStatus(connected) {
+        dbIcon.className = 'db-status-icon ' + (connected ? 'db-ok' : 'db-err');
+        // Native tooltip on hover reports the current status.
+        dbIcon.title = connected ? dbConnectedText : dbDisconnectedText;
+    }
+
     function checkDb() {
         fetch('/api/health')
             .then(function(r) { return r.json(); })
             .then(function(data) {
-                if (data.db === 'connected') {
-                    dbIcon.className = 'db-status-icon db-ok';
-                } else {
-                    dbIcon.className = 'db-status-icon db-err';
-                }
+                setDbStatus(data.db === 'connected');
             })
             .catch(function() {
-                dbIcon.className = 'db-status-icon db-err';
+                setDbStatus(false);
             });
     }
 
