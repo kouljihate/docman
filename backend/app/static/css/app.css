@@ -600,3 +600,25 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     background-position: center;
     background-repeat: no-repeat;
 }
+
+/* Several modals wrap their body and footer in a <form> (create company,
+   company setup). The scrollable dialog needs that form to be the flex
+   column instead of a single opaque child, otherwise the dialog grows past
+   the viewport and the footer buttons get cut off. */
+.modal-dialog-scrollable .modal-content > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-content > form > .modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.modal-dialog-scrollable .modal-content > form > .modal-footer {
+    flex-shrink: 0;
+}

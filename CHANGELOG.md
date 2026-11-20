@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.6.1] - 2026-11-20
+
+### Fixed
+- The Create Company (and company setup) dialog no longer grows past the
+  screen: its form is now the scrolling flex column, so the body scrolls inside
+  the viewport and the footer buttons stay visible.
+
 ## [3.6.0] - 2026-11-20
 
 ### Added
