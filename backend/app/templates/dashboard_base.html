@@ -106,6 +106,9 @@
                         {% endif %}
                     </div>
                     <div class="col text-end">
+                        {% if company and company.ice %}
+                        <span class="me-2">{{ _('ice') }}: {{ company.ice }}</span>
+                        {% endif %}
                         {% if company and company.tax_id %}
                         <span class="me-2">{{ _('tax_id') }}: {{ company.tax_id }}</span>
                         {% endif %}
@@ -156,32 +159,97 @@
                             <input type="text" name="slogan" class="form-control">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">{{ _('logo_url') }}</label>
-                            <input type="text" name="logo" class="form-control" placeholder="data:image/... or https://...">
+                            <label class="form-label">{{ _('logo') }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <img id="settingsLogoPreview" class="border rounded d-none"
+                                     style="height:48px;width:48px;object-fit:contain;" alt="Logo">
+                                <input type="file" class="form-control" accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                       onchange="handleLogoPick(event, 'settingsLogoPreview')">
+                            </div>
+                            <input type="hidden" name="logo">
                         </div>
                     </div>
 
-                    <h6 class="text-primary mb-3"><i class="bi bi-receipt me-1"></i>{{ _('tax_information') }}</h6>
+                    <h6 class="text-primary mb-3"><i class="bi bi-receipt me-1"></i>{{ _('legal_information') }}</h6>
                     <div class="row g-3 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">{{ _('tax_id') }} (IF)</label>
+                            <label class="form-label">{{ _('legal_form') }}</label>
+                            <select name="legal_form" class="form-select">
+                                <option value="">-</option>
+                                <option>SARL</option>
+                                <option>SARL AU</option>
+                                <option>SA</option>
+                                <option>SAS</option>
+                                <option>SNC</option>
+                                <option>SCS</option>
+                                <option>Auto-entrepreneur</option>
+                                <option>Association</option>
+                                <option>Coopérative</option>
+                                <option>Succursale</option>
+                                <option>Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('ice') }}</label>
+                            <input type="text" name="ice" class="form-control" maxlength="15" pattern="\d{15}"
+                                   inputmode="numeric" title="{{ _('ice_hint') }}">
+                            <div class="form-text">{{ _('ice_hint') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('rc') }}</label>
+                            <input type="text" name="rc" class="form-control" placeholder="RC Casablanca 123456">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('tax_id') }}</label>
                             <input type="text" name="tax_id" class="form-control" placeholder="Identifiant Fiscal">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('patente') }}</label>
+                            <input type="text" name="patente" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('cnss') }}</label>
+                            <input type="text" name="cnss" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('capital') }}</label>
+                            <input type="text" name="capital" class="form-control" placeholder="100 000">
                         </div>
                     </div>
 
                     <h6 class="text-primary mb-3"><i class="bi bi-geo-alt me-1"></i>{{ _('contact_info') }}</h6>
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label">{{ _('address') }}</label>
                             <textarea name="address" class="form-control" rows="2"></textarea>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('city') }}</label>
+                            <input type="text" name="city" class="form-control" placeholder="Casablanca">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('region') }}</label>
+                            <input type="text" name="region" class="form-control" placeholder="Casablanca-Settat">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('postal_code') }}</label>
+                            <input type="text" name="postal_code" class="form-control" placeholder="20000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('country') }}</label>
+                            <input type="text" name="country" class="form-control" value="Maroc">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">{{ _('email') }}</label>
                             <input type="email" name="email" class="form-control">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">{{ _('phone') }}</label>
-                            <input type="text" name="phone" class="form-control">
+                            <input type="text" name="phone" class="form-control" placeholder="+212 5 22 00 00 00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('website') }}</label>
+                            <input type="url" name="website" class="form-control" placeholder="https://...">
                         </div>
                     </div>
 
@@ -298,6 +366,43 @@ function formatPrice(val) {
     return parts.join('.') + ' MAD';
 }
 
+// Reads a picked image file, shrinks it and stores it as a data URL in the
+// form's hidden `logo` field (shared by company creation and settings).
+function handleLogoPick(event, previewId) {
+    const input = event.target;
+    const file = input.files && input.files[0];
+    const form = input.form;
+    if (!file || !form) return;
+    if (file.size > 2 * 1024 * 1024) {
+        showToast('{{ _("logo_too_large") }}', 'danger');
+        input.value = '';
+        return;
+    }
+    const preview = previewId ? document.getElementById(previewId) : null;
+    const show = function (src) {
+        form.logo.value = src;
+        if (preview) {
+            preview.src = src;
+            preview.classList.remove('d-none');
+        }
+    };
+    const reader = new FileReader();
+    reader.onload = function () {
+        const img = new Image();
+        img.onload = function () {
+            const scale = Math.min(1, 320 / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            show(canvas.toDataURL('image/png'));
+        };
+        img.onerror = function () { show(reader.result); };
+        img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+}
+
 function executeDelete() {
     bootstrap.Modal.getInstance(document.getElementById('deleteModal')).hide();
     if (deleteCallback) deleteCallback();
@@ -395,10 +500,28 @@ async function openCompanySettings() {
             form.company_name.value = data.company_name || '';
             form.slogan.value = data.slogan || '';
             form.logo.value = data.logo || '';
+            form.legal_form.value = data.legal_form || '';
+            form.ice.value = data.ice || '';
+            form.rc.value = data.rc || '';
             form.tax_id.value = data.tax_id || '';
+            form.patente.value = data.patente || '';
+            form.cnss.value = data.cnss || '';
+            form.capital.value = data.capital || '';
             form.address.value = data.address || '';
+            form.city.value = data.city || '';
+            form.region.value = data.region || '';
+            form.postal_code.value = data.postal_code || '';
+            form.country.value = data.country || 'Maroc';
             form.email.value = data.email || '';
             form.phone.value = data.phone || '';
+            form.website.value = data.website || '';
+            const logoPreview = document.getElementById('settingsLogoPreview');
+            if (data.logo) {
+                logoPreview.src = data.logo;
+                logoPreview.classList.remove('d-none');
+            } else {
+                logoPreview.classList.add('d-none');
+            }
             form.facebook.value = (data.social_links && data.social_links.facebook) || '';
             form.twitter.value = (data.social_links && data.social_links.twitter) || '';
             form.instagram.value = (data.social_links && data.social_links.instagram) || '';
@@ -423,11 +546,22 @@ async function handleCompanySetup(e) {
         company_name: form.company_name.value,
         slogan: form.slogan.value,
         logo: form.logo.value || null,
+        legal_form: form.legal_form.value,
+        ice: form.ice.value.trim(),
+        rc: form.rc.value,
+        tax_id: form.tax_id.value,
+        patente: form.patente.value,
+        cnss: form.cnss.value,
+        capital: form.capital.value,
         address: form.address.value,
+        city: form.city.value,
+        region: form.region.value,
+        postal_code: form.postal_code.value,
+        country: form.country.value,
         email: form.email.value,
         phone: form.phone.value,
+        website: form.website.value,
         social_links: {},
-        tax_id: form.tax_id.value,
     };
     if (form.facebook.value) payload.social_links.facebook = form.facebook.value;
     if (form.twitter.value) payload.social_links.twitter = form.twitter.value;

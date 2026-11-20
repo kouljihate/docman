@@ -18,6 +18,7 @@
                     <tr>
                         <th>{{ _('company_name') }}</th>
                         <th>{{ _('company_code') }}</th>
+                        <th>{{ _('ice') }}</th>
                         <th>{{ _('local_admin') }}</th>
                         <th>{{ _('customer') }}</th>
                         <th>{{ _('documents') }}</th>
@@ -26,7 +27,7 @@
                     </tr>
                 </thead>
                 <tbody id="companiesBody">
-                    <tr><td colspan="7" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -34,7 +35,7 @@
 </div>
 
 <div class="modal fade" id="companyModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{{ _('create_company') }}</h5>
@@ -42,25 +43,119 @@
             </div>
             <form id="companyForm" onsubmit="return createCompany(event)">
                 <div class="modal-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
+                    <h6 class="text-primary mb-3"><i class="bi bi-info-circle me-1"></i>{{ _('company_info') }}</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('logo') }}</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <img id="companyLogoPreview" class="border rounded d-none"
+                                     style="height:56px;width:56px;object-fit:contain;" alt="Logo">
+                                <input type="file" class="form-control" id="companyLogoFile"
+                                       accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                       onchange="handleLogoPick(event, 'companyLogoPreview')">
+                            </div>
+                            <input type="hidden" name="logo">
+                        </div>
+                        <div class="col-md-5">
                             <label class="form-label">{{ _('company_name') }} *</label>
                             <input type="text" class="form-control" name="company_name" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label">{{ _('company_code') }}</label>
                             <input type="text" class="form-control" name="code">
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('slogan') }}</label>
+                            <input type="text" class="form-control" name="slogan">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('legal_form') }}</label>
+                            <select class="form-select" name="legal_form">
+                                <option value="">-</option>
+                                <option>SARL</option>
+                                <option>SARL AU</option>
+                                <option>SA</option>
+                                <option>SAS</option>
+                                <option>SNC</option>
+                                <option>SCS</option>
+                                <option>Auto-entrepreneur</option>
+                                <option>Association</option>
+                                <option>Coopérative</option>
+                                <option>Succursale</option>
+                                <option>Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('capital') }}</label>
+                            <input type="text" class="form-control" name="capital" placeholder="100 000">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary mb-3"><i class="bi bi-receipt me-1"></i>{{ _('legal_information') }}</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('ice') }}</label>
+                            <input type="text" class="form-control" name="ice" inputmode="numeric"
+                                   maxlength="15" pattern="\d{15}" placeholder="15 digits"
+                                   title="{{ _('ice_hint') }}">
+                            <div class="form-text">{{ _('ice_hint') }}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('rc') }}</label>
+                            <input type="text" class="form-control" name="rc" placeholder="RC Casablanca 123456">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('tax_id') }}</label>
+                            <input type="text" class="form-control" name="tax_id" placeholder="Identifiant Fiscal">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('patente') }}</label>
+                            <input type="text" class="form-control" name="patente">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('cnss') }}</label>
+                            <input type="text" class="form-control" name="cnss">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary mb-3"><i class="bi bi-geo-alt me-1"></i>{{ _('contact_info') }}</h6>
+                    <div class="row g-3 mb-3">
                         <div class="col-md-6">
+                            <label class="form-label">{{ _('address') }}</label>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('city') }}</label>
+                            <input type="text" class="form-control" name="city" placeholder="Casablanca">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('region') }}</label>
+                            <input type="text" class="form-control" name="region" placeholder="Casablanca-Settat">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('postal_code') }}</label>
+                            <input type="text" class="form-control" name="postal_code" placeholder="20000">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('country') }}</label>
+                            <input type="text" class="form-control" name="country" value="Maroc">
+                        </div>
+                        <div class="col-md-3">
                             <label class="form-label">{{ _('email') }}</label>
                             <input type="email" class="form-control" name="email">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-3">
                             <label class="form-label">{{ _('phone') }}</label>
-                            <input type="text" class="form-control" name="phone">
+                            <input type="text" class="form-control" name="phone" placeholder="+212 5 22 00 00 00">
                         </div>
-                        <div class="col-12"><hr class="my-1"></div>
-                        <div class="col-12"><h6 class="text-primary mb-0">{{ _('admin_account') }}</h6></div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('website') }}</label>
+                            <input type="url" class="form-control" name="website" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary mb-3"><i class="bi bi-person-badge me-1"></i>{{ _('admin_account') }}</h6>
+                    <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">{{ _('full_name') }}</label>
                             <input type="text" class="form-control" name="admin_full_name">
@@ -78,6 +173,7 @@
                             <input type="password" class="form-control" name="admin_password" minlength="6">
                         </div>
                     </div>
+
                     <div id="companyError" class="alert alert-danger d-none mt-3"></div>
                 </div>
                 <div class="modal-footer">
@@ -96,17 +192,21 @@ async function loadCompanies() {
     const body = document.getElementById('companiesBody');
     const data = await apiRequest('/companies/');
     if (!Array.isArray(data)) {
-        body.innerHTML = `<tr><td colspan="7" class="text-center text-danger">${(data && data.error) || 'Error'}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${(data && data.error) || 'Error'}</td></tr>`;
         return;
     }
     if (!data.length) {
-        body.innerHTML = `<tr><td colspan="7" class="text-center text-muted">{{ _('no_companies') }}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="8" class="text-center text-muted">{{ _('no_companies') }}</td></tr>`;
         return;
     }
     body.innerHTML = data.map(c => `
         <tr>
-            <td class="fw-semibold">${c.company_name}</td>
+            <td class="fw-semibold">
+                ${c.logo ? `<img src="${c.logo}" alt="" class="me-2 rounded" style="height:22px;width:22px;object-fit:contain" onerror="this.style.display='none'">` : ''}
+                ${c.company_name}
+            </td>
             <td>${c.code || '-'}</td>
+            <td>${c.ice || '-'}</td>
             <td>${c.admins_count}</td>
             <td>${c.customers_count}</td>
             <td>${c.documents_count}</td>
@@ -125,7 +225,13 @@ async function loadCompanies() {
 }
 
 function openCompanyModal() {
-    document.getElementById('companyForm').reset();
+    const form = document.getElementById('companyForm');
+    form.reset();
+    form.logo.value = '';
+    form.country.value = 'Maroc';
+    const preview = document.getElementById('companyLogoPreview');
+    preview.src = '';
+    preview.classList.add('d-none');
     document.getElementById('companyError').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('companyModal')).show();
 }
@@ -136,13 +242,36 @@ async function createCompany(e) {
     const errorEl = document.getElementById('companyError');
     const btn = document.getElementById('companySubmitBtn');
     errorEl.classList.add('d-none');
+
+    const ice = form.ice.value.trim();
+    if (ice && !/^\d{15}$/.test(ice)) {
+        errorEl.textContent = '{{ _("ice_hint") }}';
+        errorEl.classList.remove('d-none');
+        return false;
+    }
+
     btn.disabled = true;
 
     const payload = {
         company_name: form.company_name.value.trim(),
         code: form.code.value.trim(),
+        slogan: form.slogan.value.trim(),
+        logo: form.logo.value || null,
+        legal_form: form.legal_form.value,
+        ice: ice,
+        rc: form.rc.value.trim(),
+        tax_id: form.tax_id.value.trim(),
+        patente: form.patente.value.trim(),
+        cnss: form.cnss.value.trim(),
+        capital: form.capital.value.trim(),
+        address: form.address.value.trim(),
+        city: form.city.value.trim(),
+        region: form.region.value.trim(),
+        postal_code: form.postal_code.value.trim(),
+        country: form.country.value.trim() || 'Maroc',
         email: form.email.value.trim(),
         phone: form.phone.value.trim(),
+        website: form.website.value.trim(),
         admin_full_name: form.admin_full_name.value.trim() || null,
         admin_username: form.admin_username.value.trim() || null,
         admin_email: form.admin_email.value.trim() || null,

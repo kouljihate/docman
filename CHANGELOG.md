@@ -4,6 +4,24 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.2.0] - 2026-11-20
+
+### Added
+- Company creation now captures the full Moroccan company profile: logo upload,
+  legal form (SARL, SARL AU, SA, SAS, SNC, SCS, auto-entrepreneur, association,
+  cooperative, branch), ICE (validated as exactly 15 digits), RC (registre de
+  commerce), IF (identifiant fiscal), patente, CNSS number, share capital, city,
+  region, postal code, country (defaults to Maroc), website and contact details.
+- The company settings modal (local admin) edits the same fields and the logo;
+  the uploaded logo is shown in the header, the companies list and the ICE is
+  shown in the footer.
+
+### Changed
+- Logos are picked as image files, downscaled in the browser to 320 px and
+  stored as a data URL (max ~650 KB); an http(s) URL is still accepted.
+- Company settings now only overwrite the fields that were submitted, so a
+  partial save no longer clears the logo or the legal identifiers.
+
 ## [3.1.1] - 2026-11-20
 
 ### Fixed

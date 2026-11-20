@@ -44,7 +44,9 @@ def save_settings():
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
-    update = settings_data.model_dump(by_alias=True)
+    # Only overwrite the fields the form actually sent, so a partial save keeps
+    # the logo and the company's legal identifiers intact.
+    update = settings_data.model_dump(exclude_none=True)
     update["updated_at"] = datetime.now(timezone.utc)
     db.companies.update_one({"_id": company_id}, {"$set": update})
 

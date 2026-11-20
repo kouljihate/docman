@@ -194,3 +194,75 @@ def test_audit_logs_are_main_admin_only(client, make_token, make_user, make_comp
 
     _login(client, make_token, main)
     assert client.get("/api/audit/logs").status_code == 200
+
+
+def test_company_creation_stores_moroccan_legal_information(client, make_token, make_user):
+    main = make_user("main_admin", "root")
+    _login(client, make_token, main)
+
+    logo = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    created = client.post(
+        "/api/companies/",
+        json={
+            "company_name": "Atlas Conseil",
+            "code": "atlas",
+            "legal_form": "SARL AU",
+            "ice": "001234567000045",
+            "rc": "RC Casablanca 123456",
+            "tax_id": "12345678",
+            "patente": "35791124",
+            "cnss": "1234567",
+            "capital": "100 000",
+            "address": "12 rue des Fleurs",
+            "city": "Casablanca",
+            "region": "Casablanca-Settat",
+            "postal_code": "20000",
+            "email": "contact@atlas.ma",
+            "phone": "+212 5 22 00 00 00",
+            "website": "https://atlas.ma",
+            "logo": logo,
+        },
+    )
+    assert created.status_code == 201
+    body = created.get_json()
+    assert body["ice"] == "001234567000045"
+    assert body["legal_form"] == "SARL AU"
+    assert body["rc"] == "RC Casablanca 123456"
+    assert body["patente"] == "35791124"
+    assert body["cnss"] == "1234567"
+    assert body["capital"] == "100 000"
+    assert body["city"] == "Casablanca"
+    assert body["region"] == "Casablanca-Settat"
+    assert body["postal_code"] == "20000"
+    assert body["country"] == "Maroc"
+    assert body["website"] == "https://atlas.ma"
+    assert body["logo"] == logo
+
+
+def test_company_creation_rejects_invalid_ice(client, make_token, make_user):
+    main = make_user("main_admin", "root")
+    _login(client, make_token, main)
+
+    resp = client.post(
+        "/api/companies/",
+        json={"company_name": "Bad ICE", "ice": "12345"},
+    )
+    assert resp.status_code == 400
+    assert "ICE" in resp.get_json()["error"]
+
+
+def test_company_settings_keep_logo_when_not_resubmitted(
+    client, db, make_token, make_user, make_company
+):
+    company = make_company()
+    logo = "data:image/png;base64,iVBORw0KGgo="
+    db.companies.update_one({"_id": company["_id"]}, {"$set": {"logo": logo, "ice": "001234567000045"}})
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, admin)
+
+    resp = client.post("/api/company/settings", json={"company_name": "Acme Renamed"})
+    assert resp.status_code == 200
+    saved = db.companies.find_one({"_id": company["_id"]})
+    assert saved["company_name"] == "Acme Renamed"
+    assert saved["logo"] == logo
+    assert saved["ice"] == "001234567000045"
