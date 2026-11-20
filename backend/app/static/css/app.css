@@ -382,8 +382,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 .sidebar {
     width: 260px;
     min-height: 100vh;
-    background: linear-gradient(180deg, #1a237e 0%, #283593 100%);
     flex-shrink: 0;
+}
+
+/* The navigation sidebars (desktop and the mobile offcanvas) share the same
+   random trianglify artwork as the page, toned down by a blue veil so the
+   white links stay readable. */
+.sidebar,
+.sidebar-offcanvas {
+    background-color: #1a237e;
+    background-image:
+        linear-gradient(180deg, rgba(26, 35, 126, 0.88), rgba(40, 53, 147, 0.88)),
+        var(--app-bg, url('/static/img/trianglify1.png'));
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
 
 .sidebar .nav-link {

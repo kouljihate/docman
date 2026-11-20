@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.5.2] - 2026-11-20
+
+### Changed
+- The navigation sidebar (desktop and mobile offcanvas) now uses the same
+  random trianglify backdrop as the page, under a translucent blue veil so the
+  menu stays legible.
+
 ## [3.5.1] - 2026-11-20
 
 ### Changed
