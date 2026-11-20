@@ -266,3 +266,57 @@ def test_company_settings_keep_logo_when_not_resubmitted(
     assert saved["company_name"] == "Acme Renamed"
     assert saved["logo"] == logo
     assert saved["ice"] == "001234567000045"
+
+
+def test_customer_creation_stores_cin_and_photo_id(
+    client, make_token, make_user, make_company
+):
+    company = make_company()
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, admin)
+
+    photo = "data:image/png;base64,iVBORw0KGgo="
+    created = client.post(
+        "/api/customers/",
+        json={
+            "username": "cin-customer",
+            "email": "cin-customer@example.com",
+            "password": "secret123",
+            "full_name": "CIN Customer",
+            "cin": "ab123456",
+            "photo_id": photo,
+        },
+    )
+    assert created.status_code == 201
+    body = created.get_json()
+    assert body["cin"] == "AB123456"
+    assert body["photo_id"] == photo
+
+    listed = client.get("/api/customers/").get_json()
+    assert listed[0]["cin"] == "AB123456"
+    assert listed[0]["photo_id"] == photo
+
+    updated = client.put(f"/api/customers/{body['_id']}", json={"cin": "CD987654"})
+    assert updated.status_code == 200
+    assert updated.get_json()["cin"] == "CD987654"
+    assert updated.get_json()["photo_id"] == photo
+
+
+def test_customer_photo_id_rejects_non_image(client, make_token, make_user, make_company):
+    company = make_company()
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, admin)
+
+    resp = client.post(
+        "/api/customers/",
+        json={
+            "username": "bad-photo",
+            "email": "bad-photo@example.com",
+            "password": "secret123",
+            "full_name": "Bad Photo",
+            "cin": "AB123456",
+            "photo_id": "javascript:alert(1)",
+        },
+    )
+    assert resp.status_code == 400
+    assert "Photo ID" in resp.get_json()["error"]

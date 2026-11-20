@@ -18,8 +18,8 @@ services:
     build:
       context: .
       args:
-        APP_VERSION: ${APP_VERSION:-3.2.0}
-    image: document-manager:${APP_VERSION:-3.2.0}
+        APP_VERSION: ${APP_VERSION:-3.3.0}
+    image: document-manager:${APP_VERSION:-3.3.0}
     restart: unless-stopped
     depends_on:
       mongo:

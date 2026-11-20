@@ -16,13 +16,16 @@
         <div class="card">
             <div class="card-body text-center">
                 <div class="display-3 text-primary mb-2">
-                    <i class="bi bi-person-circle"></i>
+                    <img id="customerPhoto" src="" alt="" class="rounded d-none mx-auto"
+                         style="height:96px;width:96px;object-fit:cover;">
+                    <i id="customerPhotoIcon" class="bi bi-person-circle"></i>
                 </div>
                 <h4 id="customerName" class="mb-1">-</h4>
                 <p id="customerRole" class="text-muted mb-2">{{ _('customer') }}</p>
                 <span id="customerStatus" class="badge"></span>
                 <hr>
                 <div class="text-start">
+                    <p class="mb-1"><strong>{{ _('cin') }}:</strong> <span id="customerCin"></span></p>
                     <p class="mb-1"><strong>{{ _('email') }}:</strong> <span id="customerEmail"></span></p>
                     <p class="mb-1"><strong>{{ _('phone') }}:</strong> <span id="customerPhone"></span></p>
                     <p class="mb-1"><strong>{{ _('affairs_count') }}:</strong> <span id="customerAffairs"></span></p>
@@ -107,6 +110,14 @@ async function loadCustomer() {
     document.getElementById('customerName').textContent = data.full_name;
     document.getElementById('customerEmail').textContent = data.email;
     document.getElementById('customerPhone').textContent = data.phone || '-';
+    document.getElementById('customerCin').textContent = data.cin || '-';
+    if (data.photo_id) {
+        const photo = document.getElementById('customerPhoto');
+        photo.src = data.photo_id;
+        photo.classList.remove('d-none');
+        photo.classList.add('d-block');
+        document.getElementById('customerPhotoIcon').classList.add('d-none');
+    }
     document.getElementById('customerAffairs').textContent = data.affair_count ?? '-';
     document.getElementById('customerSince').textContent = formatDate(data.created_at);
 

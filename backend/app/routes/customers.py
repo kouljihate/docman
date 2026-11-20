@@ -144,6 +144,7 @@ def bulk_create_customers():
             full_name = (item.get("full_name") or "").strip()
             password = item.get("password") or "customer123"
             phone = (item.get("phone") or "").strip()
+            cin = (item.get("cin") or "").strip().upper()
 
             if not username or not email or not full_name:
                 results["errors"].append({"row": index, "reason": "Missing required fields (username, email, full_name)", "data": item})
@@ -161,6 +162,7 @@ def bulk_create_customers():
                     "role": CUSTOMER,
                     "full_name": full_name,
                     "phone": phone or None,
+                    "cin": cin or None,
                     "is_active": True,
                     "company_id": company_id,
                     "created_by": admin_id,
@@ -196,7 +198,7 @@ def update_customer(customer_id):
         return jsonify({"error": "Customer not found"}), 404
 
     update_dict = {}
-    for field in ("full_name", "email", "phone", "is_active"):
+    for field in ("full_name", "email", "phone", "is_active", "cin", "photo_id"):
         if field in data:
             update_dict[field] = data[field]
 

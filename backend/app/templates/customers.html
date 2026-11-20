@@ -22,6 +22,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('full_name') }}</th>
+                        <th>{{ _('cin') }}</th>
                         <th>{{ _('email') }}</th>
                         <th>{{ _('phone') }}</th>
                         <th>{{ _('affairs_count') }}</th>
@@ -32,7 +33,7 @@
                     </tr>
                 </thead>
                 <tbody id="customersTableBody">
-                    <tr><td colspan="7" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -40,7 +41,7 @@
 </div>
 
 <div class="modal fade" id="customerModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="customerModalTitle">{{ _('create_customer') }}</h5>
@@ -61,9 +62,27 @@
                         <label class="form-label">{{ _('email') }} *</label>
                         <input type="email" name="email" class="form-control" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('phone') }}</label>
-                        <input type="text" name="phone" class="form-control">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('phone') }}</label>
+                            <input type="text" name="phone" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('cin') }}</label>
+                            <input type="text" name="cin" class="form-control" maxlength="20" placeholder="AB123456">
+                            <div class="form-text">{{ _('cin_hint') }}</div>
+                        </div>
+                    </div>
+                    <div class="mb-3 mt-3">
+                        <label class="form-label">{{ _('photo_id') }}</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <img id="customerPhotoPreview" class="border rounded d-none"
+                                 style="height:56px;width:56px;object-fit:cover;" alt="Photo ID">
+                            <input type="file" class="form-control" accept="image/png,image/jpeg,image/webp"
+                                   onchange="handleLogoPick(event, 'customerPhotoPreview', 'photo_id')">
+                        </div>
+                        <input type="hidden" name="photo_id">
+                        <div class="form-text">{{ _('photo_id_hint') }}</div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">{{ _('password') }} *</label>
@@ -125,13 +144,17 @@ async function loadCustomers() {
     const data = await apiRequest('/customers/');
     const tbody = document.getElementById('customersTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
         return;
     }
     customersData = data;
     tbody.innerHTML = data.map(c => `
         <tr>
-            <td><a href="/customers/${c._id}" class="fw-bold text-decoration-none">${c.full_name}</a></td>
+            <td>
+                ${c.photo_id ? `<img src="${c.photo_id}" alt="" class="rounded me-2" style="height:26px;width:26px;object-fit:cover" onerror="this.style.display='none'">` : ''}
+                <a href="/customers/${c._id}" class="fw-bold text-decoration-none">${c.full_name}</a>
+            </td>
+            <td>${c.cin || '-'}</td>
             <td>${c.email}</td>
             <td>${c.phone || '-'}</td>
             <td><span class="badge bg-info">${c.affair_count || 0}</span></td>
@@ -154,6 +177,8 @@ function openCreateModal() {
     document.getElementById('customerModalTitle').textContent = '{{ _('create_customer') }}';
     document.getElementById('editCustomerId').value = '';
     document.getElementById('customerForm').reset();
+    document.getElementById('customerForm').photo_id.value = '';
+    document.getElementById('customerPhotoPreview').classList.add('d-none');
     document.getElementById('customerForm').querySelector('[name=password]').required = true;
     document.getElementById('customerError').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('customerModal')).show();
@@ -168,6 +193,15 @@ async function editCustomer(id) {
     document.getElementById('customerForm').username.value = data.username || '';
     document.getElementById('customerForm').email.value = data.email || '';
     document.getElementById('customerForm').phone.value = data.phone || '';
+    document.getElementById('customerForm').cin.value = data.cin || '';
+    document.getElementById('customerForm').photo_id.value = data.photo_id || '';
+    const photoPreview = document.getElementById('customerPhotoPreview');
+    if (data.photo_id) {
+        photoPreview.src = data.photo_id;
+        photoPreview.classList.remove('d-none');
+    } else {
+        photoPreview.classList.add('d-none');
+    }
     document.getElementById('customerForm').password.required = false;
     document.getElementById('customerForm').password.value = '';
     document.getElementById('customerError').classList.add('d-none');
@@ -186,6 +220,8 @@ async function handleCustomerSubmit(e) {
         username: form.username.value,
         email: form.email.value,
         phone: form.phone.value,
+        cin: form.cin.value.trim(),
+        photo_id: form.photo_id.value || null,
     };
     if (form.password.value) body.password = form.password.value;
 
@@ -312,8 +348,8 @@ async function submitBulkImport() {
 }
 
 function downloadCsvTemplate() {
-    const headers = ['username', 'email', 'full_name', 'password', 'phone'];
-    const sample = ['john_doe', 'john@example.com', 'John Doe', 'customer123', '+1-555-0100'];
+    const headers = ['username', 'email', 'full_name', 'password', 'phone', 'cin'];
+    const sample = ['john_doe', 'john@example.com', 'John Doe', 'customer123', '+212 600 000000', 'AB123456'];
     const csv = headers.join(',') + '\n' + sample.join(',') + '\n';
     const blob = new Blob([csv], { type: 'text/csv' });
     const a = document.createElement('a');

@@ -4,6 +4,17 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.3.0] - 2026-11-20
+
+### Added
+- Customer creation now records the **CIN** (Moroccan national identity card,
+  stored uppercase) and a **photo ID**: the identity document is picked as an
+  image, downscaled in the browser and stored with the customer.
+- The customers list shows the CIN and a thumbnail, the customer detail page
+  shows the CIN and the full photo, and both fields are editable when a customer
+  is updated. Bulk customer import accepts a `cin` column and the CSV template
+  includes it.
+
 ## [3.2.0] - 2026-11-20
 
 ### Added

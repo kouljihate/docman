@@ -368,19 +368,20 @@ function formatPrice(val) {
 
 // Reads a picked image file, shrinks it and stores it as a data URL in the
 // form's hidden `logo` field (shared by company creation and settings).
-function handleLogoPick(event, previewId) {
+function handleLogoPick(event, previewId, fieldName) {
+    const field = fieldName || 'logo';
     const input = event.target;
     const file = input.files && input.files[0];
     const form = input.form;
-    if (!file || !form) return;
+    if (!file || !form || !form[field]) return;
     if (file.size > 2 * 1024 * 1024) {
-        showToast('{{ _("logo_too_large") }}', 'danger');
+        showToast('{{ _("image_too_large") }}', 'danger');
         input.value = '';
         return;
     }
     const preview = previewId ? document.getElementById(previewId) : null;
     const show = function (src) {
-        form.logo.value = src;
+        form[field].value = src;
         if (preview) {
             preview.src = src;
             preview.classList.remove('d-none');
