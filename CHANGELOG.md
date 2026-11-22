@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.9.2] - 2026-11-22
+
+### Fixed
+- Service Management showed a task count per service but its expanded
+  **Tasks** panel always said "No tasks found": `GET /api/tasks/` did not
+  return `service_id`, which the panel uses to group tasks by service. Task
+  responses now include `service_id` (and `assigned_to`).
+
 ## [3.9.1] - 2026-11-22
 
 ### Changed

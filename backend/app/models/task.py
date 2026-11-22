@@ -21,6 +21,8 @@ class TaskResponse(BaseModel):
     title: str
     description: Optional[str] = None
     created_by: str
+    service_id: Optional[str] = None
+    assigned_to: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime
@@ -29,7 +31,7 @@ class TaskResponse(BaseModel):
     @classmethod
     def convert_object_id(cls, data):
         if isinstance(data, dict):
-            for key in ("_id", "created_by"):
+            for key in ("_id", "created_by", "service_id", "assigned_to"):
                 if key in data and isinstance(data[key], ObjectId):
                     data[key] = str(data[key])
         return data
