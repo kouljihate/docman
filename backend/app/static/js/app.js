@@ -266,3 +266,150 @@ window.addEventListener('load', () => {
 window.addEventListener('pageshow', (event) => {
     if (event.persisted) resetLoader();
 });
+
+/* ---- Table pagination -------------------------------------------------
+ * Every table gets a Bootstrap pagination bar as soon as it holds more
+ * than TABLE_PAGE_SIZE rows. Rows are paged client-side, so it works for
+ * tables rendered by each page's own script; a MutationObserver re-pages
+ * a table whenever its <tbody> is re-rendered (search, delete, reload).
+ */
+const TABLE_PAGE_SIZE = 10;
+const tablePagination = new WeakMap();
+const PAGINATION_I18N = window.APP_I18N || {};
+
+function paginationText(key, fallback) {
+    return PAGINATION_I18N[key] || fallback;
+}
+
+// Compact page list: 1 … 4 5 6 … 12
+function paginationPageNumbers(current, pages) {
+    if (pages <= 7) {
+        const all = [];
+        for (let i = 1; i <= pages; i++) all.push(i);
+        return all;
+    }
+    const numbers = [1];
+    const start = Math.max(2, current - 2);
+    const end = Math.min(pages - 1, current + 2);
+    if (start > 2) numbers.push('…');
+    for (let i = start; i <= end; i++) numbers.push(i);
+    if (end < pages - 1) numbers.push('…');
+    numbers.push(pages);
+    return numbers;
+}
+
+function paginationBar(table) {
+    if (table._paginationBar && document.body.contains(table._paginationBar)) {
+        return table._paginationBar;
+    }
+    const bar = document.createElement('div');
+    bar.className = 'table-pagination';
+    const host = table.closest('.table-responsive') || table;
+    host.insertAdjacentElement('afterend', bar);
+    table._paginationBar = bar;
+
+    bar.addEventListener('click', (event) => {
+        const button = event.target.closest('button[data-page]');
+        if (!button || button.closest('.disabled')) return;
+        const page = parseInt(button.getAttribute('data-page'), 10);
+        const state = tablePagination.get(table);
+        if (!state || !page || page === state.page) return;
+        state.page = page;
+        renderTablePagination(table);
+        table.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    return bar;
+}
+
+function renderTablePagination(table) {
+    const tbody = table.tBodies[0];
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.rows);
+    const pages = Math.max(1, Math.ceil(rows.length / TABLE_PAGE_SIZE));
+    const state = tablePagination.get(table) || { page: 1 };
+    state.page = Math.min(Math.max(1, state.page), pages);
+    tablePagination.set(table, state);
+
+    rows.forEach((row, index) => {
+        row.style.display = Math.floor(index / TABLE_PAGE_SIZE) + 1 === state.page ? '' : 'none';
+    });
+
+    const bar = paginationBar(table);
+    if (rows.length <= TABLE_PAGE_SIZE) {
+        bar.innerHTML = '';
+        bar.style.display = 'none';
+        return;
+    }
+    bar.style.display = '';
+
+    const from = (state.page - 1) * TABLE_PAGE_SIZE + 1;
+    const to = Math.min(rows.length, state.page * TABLE_PAGE_SIZE);
+    const info = paginationText('paginationInfo', 'Showing {start}–{end} of {total}')
+        .replace('{start}', from)
+        .replace('{end}', to)
+        .replace('{total}', rows.length);
+
+    const numberItems = paginationPageNumbers(state.page, pages).map((number) => {
+        if (number === '…') {
+            return '<li class="page-item disabled"><span class="page-link">…</span></li>';
+        }
+        return `<li class="page-item ${number === state.page ? 'active' : ''}">` +
+            `<button class="page-link" type="button" data-page="${number}"` +
+            `${number === state.page ? ' aria-current="page"' : ''}>${number}</button></li>`;
+    }).join('');
+
+    bar.innerHTML = `
+        <div class="table-pagination-inner">
+            <small class="text-muted">${info}</small>
+            <nav aria-label="${paginationText('paginationLabel', 'Table pagination')}">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item ${state.page === 1 ? 'disabled' : ''}">
+                        <button class="page-link" type="button" data-page="${state.page - 1}">
+                            ${paginationText('paginationPrev', 'Previous')}
+                        </button>
+                    </li>
+                    ${numberItems}
+                    <li class="page-item ${state.page === pages ? 'disabled' : ''}">
+                        <button class="page-link" type="button" data-page="${state.page + 1}">
+                            ${paginationText('paginationNext', 'Next')}
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>`;
+}
+
+function paginateAllTables() {
+    document.querySelectorAll('table').forEach((table) => {
+        if (!table.tBodies.length) return;
+        renderTablePagination(table);
+    });
+}
+
+let paginationScanQueued = false;
+
+function queuePaginationScan() {
+    if (paginationScanQueued) return;
+    paginationScanQueued = true;
+    setTimeout(() => {
+        paginationScanQueued = false;
+        paginateAllTables();
+    }, 0);
+}
+
+// Table bodies are filled in by each page's script, so watch the document and
+// re-page on every re-render. The paginator's own DOM is ignored to avoid loops.
+const tablePaginationObserver = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+        const target = mutation.target.nodeType === 1 ? mutation.target : mutation.target.parentElement;
+        if (target && target.closest && target.closest('.table-pagination')) continue;
+        queuePaginationScan();
+        return;
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    paginateAllTables();
+    tablePaginationObserver.observe(document.body, { childList: true, subtree: true });
+});

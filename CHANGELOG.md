@@ -4,6 +4,18 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.7.0] - 2026-11-22
+
+### Added
+- Client-side table pagination: every table whose body holds more than
+  10 rows now shows a Bootstrap pagination bar (previous / next / page
+  numbers, plus a "showing x–y of n" summary) and displays 10 rows per
+  page. It applies to all list pages (customers, companies, users,
+  services, documents, tasks, activities, audit, affairs, notifications,
+  requests and the detail tables) and re-pages automatically when a page
+  script re-renders its table. Labels are translated in EN, Arabic and
+  French.
+
 ## [3.6.3] - 2026-11-22
 
 ### Added

@@ -650,3 +650,20 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     max-width: 40vw;
     max-height: 40vh;
 }
+
+/* ---- Table pagination ---- */
+.table-pagination {
+    margin-top: 0.75rem;
+}
+
+.table-pagination-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.table-pagination .page-link {
+    cursor: pointer;
+}
