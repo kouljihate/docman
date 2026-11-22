@@ -223,6 +223,23 @@ def delete_user(user_id):
     return jsonify({"message": "User deleted"}), 200
 
 
+@users_bp.route("/assignees", methods=["GET"])
+@jwt_required()
+@admin_required
+def list_assignees():
+    """Active employees and local managers who can receive activities."""
+    db = get_db()
+    query = company_scope(
+        {"role": {"$in": [LOCAL_ADMIN, LOCAL_EMPLOYEE]}, "is_active": {"$ne": False}}
+    )
+    if is_main_admin():
+        company_id = to_object_id(request.args.get("company_id"))
+        if company_id:
+            query["company_id"] = company_id
+    users = list(db.users.find(query).sort([("role", 1), ("full_name", 1)]))
+    return jsonify([UserResponse(**u).model_dump(by_alias=True) for u in users]), 200
+
+
 @users_bp.route("/employees", methods=["GET"])
 @jwt_required()
 @admin_required

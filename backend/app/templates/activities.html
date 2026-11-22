@@ -141,7 +141,7 @@ async function loadActivities() {
         const taskNames = a.task_names || [];
         return `
         <tr>
-            <td><strong>${a.title}</strong></td>
+            <td><strong>${a.title}</strong>${a.affair_name ? `<br><small class="text-muted"><i class="bi bi-folder me-1"></i>${a.affair_name}</small>` : ''}</td>
             <td>${a.description || '-'}</td>
             <td>${a.customer_name || '-'}</td>
             <td>${a.assigned_to_name || '-'}</td>

@@ -12,6 +12,11 @@ class AffairCreate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     notes: Optional[str] = None
+    # Optional handling: the affair can be opened with services and an
+    # assignee (employee or local manager) so activities are generated.
+    assigned_to: Optional[str] = None
+    service_ids: list[str] = []
+    generate_activities: bool = True
 
 
 class AffairUpdate(BaseModel):
@@ -21,6 +26,7 @@ class AffairUpdate(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     notes: Optional[str] = None
+    assigned_to: Optional[str] = None
 
 
 class AffairResponse(BaseModel):
@@ -33,6 +39,13 @@ class AffairResponse(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     notes: Optional[str] = None
+    assigned_to: Optional[str] = None
+    assigned_to_name: Optional[str] = None
+    assigned_to_role: Optional[str] = None
+    service_ids: list[str] = []
+    service_names: list[str] = []
+    activity_count: int = 0
+    completed_activity_count: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -40,7 +53,12 @@ class AffairResponse(BaseModel):
     @classmethod
     def convert_object_id(cls, data):
         if isinstance(data, dict):
-            for key in ("_id", "customer_id"):
+            for key in ("_id", "customer_id", "assigned_to"):
                 if key in data and isinstance(data[key], ObjectId):
                     data[key] = str(data[key])
+            if "service_ids" in data and data["service_ids"]:
+                data["service_ids"] = [
+                    str(s) if isinstance(s, ObjectId) else s
+                    for s in data["service_ids"]
+                ]
         return data

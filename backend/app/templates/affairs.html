@@ -4,7 +4,10 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="bi bi-folder me-2"></i>{{ _('affair_list') }}</h4>
+    <div>
+        <h4 class="mb-0"><i class="bi bi-folder me-2"></i>{{ _('affair_list') }}</h4>
+        <small class="text-muted">{{ _('manage_affairs') }}</small>
+    </div>
     <button class="btn btn-cse" onclick="openCreateModal()">
         <i class="bi bi-plus-lg me-1"></i>{{ _('create_affair') }}
     </button>
@@ -19,13 +22,15 @@
                         <th>{{ _('affair_name') }}</th>
                         <th>{{ _('affair_type') }}</th>
                         <th>{{ _('customer') }}</th>
-                        <th>{{ _('affair_phone') }}</th>
+                        <th>{{ _('affair_services') }}</th>
+                        <th>{{ _('assigned_to') }}</th>
+                        <th>{{ _('affair_activities') }}</th>
                         <th>{{ _('created_at') }}</th>
                         <th>{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="affairsTableBody">
-                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -33,7 +38,7 @@
 </div>
 
 <div class="modal fade" id="affairModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="affairModalTitle">{{ _('create_affair') }}</h5>
@@ -42,40 +47,60 @@
             <form id="affairForm" onsubmit="return handleAffairSubmit(event)">
                 <div class="modal-body">
                     <input type="hidden" id="editAffairId">
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_name') }} *</label>
-                        <input type="text" name="name" class="form-control" required>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">{{ _('affair_name') }} *</label>
+                            <input type="text" name="name" class="form-control" required minlength="2">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('affair_type') }}</label>
+                            <select name="affair_type" class="form-select">
+                                <option value="individual">{{ _('customer') }}</option>
+                                <option value="enterprise">Enterprise</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('customer') }} *</label>
+                            <select name="customer_id" class="form-select" id="affairCustomerSelect" required>
+                                <option value="">{{ _('select') }}...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('affair_phone') }}</label>
+                            <input type="text" name="phone" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('affair_email') }}</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ _('affair_address') }}</label>
+                            <textarea name="address" class="form-control" rows="2"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">{{ _('affair_notes') }}</label>
+                            <textarea name="notes" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="col-md-7">
+                            <label class="form-label d-block">{{ _('affair_services') }}</label>
+                            <div id="affairServices" class="border rounded p-2 bg-light" style="max-height:170px;overflow-y:auto">
+                                <p class="text-muted small mb-0">{{ _('loading') }}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">{{ _('assigned_to') }}</label>
+                            <select name="assigned_to" class="form-select" id="affairAssigneeSelect">
+                                <option value="">{{ _('select_assignee') }}</option>
+                            </select>
+                            <div class="form-text">{{ _('assignee_hint') }}</div>
+                            <div class="form-check mt-2" id="generateWrap">
+                                <input class="form-check-input" type="checkbox" name="generate_activities" id="generateActivities" checked>
+                                <label class="form-check-label small" for="generateActivities">{{ _('generate_activities') }}</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_type') }}</label>
-                        <select name="affair_type" class="form-select">
-                            <option value="individual">{{ _('customer') }}</option>
-                            <option value="enterprise">Enterprise</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('customer') }} *</label>
-                        <select name="customer_id" class="form-select" id="affairCustomerSelect" required>
-                            <option value="">{{ _('select') }}...</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_phone') }}</label>
-                        <input type="text" name="phone" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_email') }}</label>
-                        <input type="email" name="email" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_address') }}</label>
-                        <textarea name="address" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">{{ _('affair_notes') }}</label>
-                        <textarea name="notes" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div id="affairError" class="alert alert-danger d-none"></div>
+                    <div id="affairError" class="alert alert-danger d-none mt-3"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
@@ -91,33 +116,87 @@
 <script>
 let editingAffairId = null;
 let affairsData = [];
+let affairServices = [];
+let affairAssignees = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    const customers = await apiRequest('/customers/');
-    if (customers) {
+    const [customers, services, assignees] = await Promise.all([
+        apiRequest('/customers/'),
+        apiRequest('/services/'),
+        apiRequest('/users/assignees'),
+    ]);
+
+    if (Array.isArray(customers)) {
         const sel = document.getElementById('affairCustomerSelect');
         sel.innerHTML = '<option value="">{{ _('select') }}...</option>' +
             customers.map(c => `<option value="${c._id}">${c.full_name}</option>`).join('');
     }
+    affairServices = Array.isArray(services) ? services : [];
+    affairAssignees = Array.isArray(assignees) ? assignees : [];
+    renderAssigneeOptions('');
+
     loadAffairs();
 });
+
+function renderAssigneeOptions(selected) {
+    const sel = document.getElementById('affairAssigneeSelect');
+    sel.innerHTML = '<option value="">{{ _('select_assignee') }}</option>' +
+        affairAssignees.map(u => {
+            const label = u.role === 'local_admin'
+                ? `${u.full_name} ({{ _('local_manager') }})`
+                : `${u.full_name} ({{ _('employee') }})`;
+            return `<option value="${u._id}">${label}</option>`;
+        }).join('');
+    sel.value = selected || '';
+}
+
+function renderServiceChoices(selected) {
+    const box = document.getElementById('affairServices');
+    if (!affairServices.length) {
+        box.innerHTML = `<p class="text-muted small mb-0">{{ _('no_services_available') }}</p>`;
+        return;
+    }
+    box.innerHTML = affairServices.map(s => `
+        <label class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" value="${s._id}" ${selected.includes(s._id) ? 'checked' : ''}>
+            <span class="form-check-label small">${s.name}</span>
+        </label>
+    `).join('');
+}
 
 async function loadAffairs() {
     const data = await apiRequest('/affairs/');
     const tbody = document.getElementById('affairsTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>';
         return;
     }
     affairsData = data;
-    tbody.innerHTML = data.map(a => `
+    tbody.innerHTML = data.map(a => {
+        const serviceNames = a.service_names || [];
+        const serviceBadges = serviceNames.length
+            ? serviceNames.map(n => `<span class="badge bg-light text-dark border me-1 mb-1">${n}</span>`).join('')
+            : '<span class="text-muted">-</span>';
+        const assignee = a.assigned_to_name
+            ? `${a.assigned_to_name}<br><small class="text-muted">${a.assigned_to_role === 'local_admin' ? '{{ _('local_manager') }}' : '{{ _('employee') }}'}</small>`
+            : '<span class="text-muted">-</span>';
+        const activities = a.activity_count
+            ? `<span class="badge rounded-pill bg-info">${a.activity_count}</span>
+               <small class="text-muted ms-1">${a.completed_activity_count || 0} {{ _('completed_label') }}</small>`
+            : '<span class="text-muted">-</span>';
+        return `
         <tr>
             <td><strong>${a.name}</strong></td>
             <td><span class="badge bg-${a.affair_type === 'enterprise' ? 'primary' : 'secondary'}">${a.affair_type}</span></td>
             <td>${a.customer_name || '-'}</td>
-            <td>${a.phone || '-'}</td>
+            <td>${serviceBadges}</td>
+            <td>${assignee}</td>
+            <td>${activities}</td>
             <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
             <td class="table-actions">
+                <button class="btn btn-sm btn-outline-info" onclick="generateActivities('${a._id}')" title="{{ _('generate_activities') }}">
+                    <i class="bi bi-magic"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="editAffair('${a._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -125,8 +204,8 @@ async function loadAffairs() {
                     <i class="bi bi-trash"></i>
                 </button>
             </td>
-        </tr>
-    `).join('');
+        </tr>`;
+    }).join('');
 }
 
 function openCreateModal() {
@@ -135,22 +214,29 @@ function openCreateModal() {
     document.getElementById('editAffairId').value = '';
     document.getElementById('affairForm').reset();
     document.getElementById('affairError').classList.add('d-none');
+    document.getElementById('generateWrap').style.display = '';
+    renderServiceChoices([]);
+    renderAssigneeOptions('');
     new bootstrap.Modal(document.getElementById('affairModal')).show();
 }
 
 async function editAffair(id) {
     const data = await apiRequest(`/affairs/${id}`);
-    if (!data) return;
+    if (!data || !data._id) return;
     editingAffairId = id;
     document.getElementById('affairModalTitle').textContent = '{{ _('edit_affair') }}';
     document.getElementById('editAffairId').value = id;
-    document.getElementById('affairForm').name.value = data.name || '';
-    document.getElementById('affairForm').affair_type.value = data.affair_type || 'individual';
-    document.getElementById('affairForm').phone.value = data.phone || '';
-    document.getElementById('affairForm').email.value = data.email || '';
-    document.getElementById('affairForm').address.value = data.address || '';
-    document.getElementById('affairForm').notes.value = data.notes || '';
-    document.getElementById('affairCustomerSelect').value = data.customer_id || '';
+    const form = document.getElementById('affairForm');
+    form.name.value = data.name || '';
+    form.affair_type.value = data.affair_type || 'individual';
+    form.phone.value = data.phone || '';
+    form.email.value = data.email || '';
+    form.address.value = data.address || '';
+    form.notes.value = data.notes || '';
+    form.customer_id.value = data.customer_id || '';
+    renderServiceChoices(data.service_ids || []);
+    renderAssigneeOptions(data.assigned_to || '');
+    document.getElementById('generateWrap').style.display = 'none';
     document.getElementById('affairError').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('affairModal')).show();
 }
@@ -162,6 +248,16 @@ async function handleAffairSubmit(e) {
     const errorEl = document.getElementById('affairError');
     errorEl.classList.add('d-none');
 
+    const serviceIds = Array.from(document.querySelectorAll('#affairServices input:checked')).map(i => i.value);
+    const assignedTo = form.assigned_to.value;
+    const generate = !id && document.getElementById('generateActivities').checked;
+
+    if (generate && serviceIds.length && !assignedTo) {
+        errorEl.textContent = '{{ _('affair_requires_assignee') }}';
+        errorEl.classList.remove('d-none');
+        return false;
+    }
+
     const body = {
         name: form.name.value,
         affair_type: form.affair_type.value,
@@ -170,24 +266,34 @@ async function handleAffairSubmit(e) {
         email: form.email.value || null,
         address: form.address.value || null,
         notes: form.notes.value || null,
+        assigned_to: assignedTo || null,
+        service_ids: serviceIds,
     };
+    if (!id) body.generate_activities = generate;
 
-    let data;
-    if (id) {
-        data = await apiRequest(`/affairs/${id}`, { method: 'PUT', body: JSON.stringify(body) });
-    } else {
-        data = await apiRequest('/affairs/', { method: 'POST', body: JSON.stringify(body) });
-    }
+    const data = id
+        ? await apiRequest(`/affairs/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+        : await apiRequest('/affairs/', { method: 'POST', body: JSON.stringify(body) });
 
-    if (data._id || data.message) {
+    if (data && (data._id || data.message)) {
         bootstrap.Modal.getInstance(document.getElementById('affairModal')).hide();
         showToast(id ? '{{ _('update') }}' : '{{ _('create') }}');
         loadAffairs();
     } else {
-        errorEl.textContent = data.error || 'Error';
+        errorEl.textContent = (data && data.error) || 'Error';
         errorEl.classList.remove('d-none');
     }
     return false;
+}
+
+async function generateActivities(id) {
+    const data = await apiRequest(`/affairs/${id}/activities`, { method: 'POST' });
+    if (data && !data.error) {
+        showToast(data.created > 0 ? '{{ _('activities_generated') }}' : '{{ _('all_activities_exist') }}');
+        loadAffairs();
+    } else {
+        showToast((data && data.error) || 'Error', 'danger');
+    }
 }
 
 async function deleteAffair(id) {

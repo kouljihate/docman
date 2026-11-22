@@ -4,6 +4,26 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.8.0] - 2026-11-22
+
+### Added
+- "Affaires" menu entry for local admins: a single page listing every
+  affair of the company with its customer, services, assignee and generated
+  activity counters.
+- An affair can now attach services and an assignee (employee or local
+  manager). Saving it generates one activity per service, carrying that
+  service's tasks, and notifies the assignee.
+- `POST /api/affairs/<id>/activities` generates the missing activities of an
+  affair on demand and is idempotent (already-generated services are kept).
+- `GET /api/users/assignees` lists the active employees and local managers
+  who can receive activities.
+
+### Changed
+- Activity creation accepts a local manager as assignee, not only an
+  employee, and can link the activity to its parent affair.
+- The activities list shows the parent affair under the activity title.
+- Deleting an affair deletes the activities and notifications it generated.
+
 ## [3.7.2] - 2026-11-22
 
 ### Added

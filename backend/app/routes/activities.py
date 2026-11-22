@@ -38,8 +38,10 @@ def create_activity():
         return jsonify({"error": "Title is required"}), 400
     if not assigned_to:
         return jsonify({"error": "Assigned employee is required"}), 400
-    if not db.users.find_one(company_scope({"_id": to_object_id(assigned_to), "role": LOCAL_EMPLOYEE})):
-        return jsonify({"error": "Assigned user must be an employee of your company"}), 400
+    if not db.users.find_one(
+        company_scope({"_id": to_object_id(assigned_to), "role": {"$in": [LOCAL_EMPLOYEE, LOCAL_ADMIN]}})
+    ):
+        return jsonify({"error": "Assigned user must be an employee or local manager of your company"}), 400
     if not customer_id:
         return jsonify({"error": "Customer is required"}), 400
     if not db.users.find_one(company_scope({"_id": to_object_id(customer_id), "role": CUSTOMER})):
@@ -50,12 +52,17 @@ def create_activity():
 
     notes = data.get("notes", "").strip()
 
+    affair_id = data.get("affair_id", "").strip() if data.get("affair_id") else None
+    if affair_id and not db.affairs.find_one(company_scope({"_id": to_object_id(affair_id)})):
+        return jsonify({"error": "Affair not found"}), 404
+
     activity_dict = {
         "title": title,
         "description": description or None,
         "assigned_to": ObjectId(assigned_to),
         "assigned_by": ObjectId(admin_id),
         "customer_id": ObjectId(customer_id),
+        "affair_id": ObjectId(affair_id) if affair_id else None,
         "task_ids": [ObjectId(tid) for tid in task_ids],
         "status": "pending",
         "notes": notes or None,
@@ -107,6 +114,7 @@ def create_activity():
     activity_dict["assigned_to"] = str(activity_dict["assigned_to"])
     activity_dict["assigned_by"] = str(activity_dict["assigned_by"])
     activity_dict["customer_id"] = str(activity_dict["customer_id"])
+    activity_dict["affair_id"] = str(activity_dict["affair_id"]) if activity_dict["affair_id"] else None
     activity_dict["task_ids"] = [str(tid) for tid in activity_dict["task_ids"]]
 
     tasks_data = list(db.tasks.find({"_id": {"$in": [ObjectId(tid) for tid in task_ids]}}, {"title": 1}))
@@ -174,14 +182,24 @@ def list_activities():
             }
         },
         {
+            "$lookup": {
+                "from": "affairs",
+                "localField": "affair_id",
+                "foreignField": "_id",
+                "as": "affair",
+            }
+        },
+        {"$unwind": {"path": "$affair", "preserveNullAndEmptyArrays": True}},
+        {
             "$addFields": {
                 "assigned_to_name": "$assigned_user.full_name",
                 "assigned_by_name": "$assigned_by_user.full_name",
                 "customer_name": "$customer_user.full_name",
+                "affair_name": "$affair.name",
                 "task_names": {"$map": {"input": "$tasks", "as": "t", "in": "$$t.title"}},
             }
         },
-        {"$project": {"assigned_user": 0, "assigned_by_user": 0, "customer_user": 0, "tasks": 0}},
+        {"$project": {"assigned_user": 0, "assigned_by_user": 0, "customer_user": 0, "tasks": 0, "affair": 0}},
     ]
 
     activities = list(db.activities.aggregate(pipeline))
