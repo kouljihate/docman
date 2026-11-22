@@ -4,6 +4,21 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.8.1] - 2026-11-22
+
+### Added
+- `backend/app/utils/task_title.py`: extracts a short title from a long task
+  sentence (first clause, cut at a word boundary, trailing articles and
+  prepositions trimmed).
+- `backend/migrate_task_titles.py`: applies that extraction to every task row,
+  moves the full original title into the description and leaves tasks with an
+  already short title untouched. Supports `--dry-run`, `--company` and
+  `--max-chars`, and is idempotent.
+
+### Changed
+- Task rows now show a short label in the title column, with the complete
+  sentence kept in the description (also used by the activity task lists).
+
 ## [3.8.0] - 2026-11-22
 
 ### Added
