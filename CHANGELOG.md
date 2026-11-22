@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.7.2] - 2026-11-22
+
+### Added
+- `test/seed_services_tasks.py`: seeds the six service lines (conseil
+  juridique, conseil fiscal, organisation entreprise, étude, domiciliation,
+  recouvrement des créances) with their main tasks (36 tasks, six per
+  service) in the selected company. It is idempotent, matches services by
+  name regardless of case, reuses a local admin as task author and supports
+  `--company` and `--dry-run`.
+
 ## [3.7.1] - 2026-11-22
 
 ### Changed
