@@ -4,6 +4,12 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.7.1] - 2026-11-22
+
+### Changed
+- Customer list: the "Customer Since" column is removed, leaving the table
+  with name, CIN, email, phone, affairs, status, tasks and actions.
+
 ## [3.7.0] - 2026-11-22
 
 ### Added

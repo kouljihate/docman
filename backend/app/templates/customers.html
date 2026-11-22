@@ -28,12 +28,11 @@
                         <th>{{ _('affairs_count') }}</th>
                         <th>{{ _('status') }}</th>
                         <th>{{ _('total_customer_tasks') }}</th>
-                        <th>{{ _('customer_since') }}</th>
                         <th>{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="customersTableBody">
-                    <tr><td colspan="9" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -144,7 +143,7 @@ async function loadCustomers() {
     const data = await apiRequest('/customers/');
     const tbody = document.getElementById('customersTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
         return;
     }
     customersData = data;
@@ -160,7 +159,6 @@ async function loadCustomers() {
             <td><span class="badge bg-info">${c.affair_count || 0}</span></td>
             <td><span class="badge bg-${c.is_active ? 'success' : 'danger'}">${c.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
             <td><span class="badge bg-info">${c.task_stats?.total || 0}</span></td>
-            <td><small class="text-muted">${formatDate(c.created_at)}</small></td>
             <td class="table-actions">
                 <button class="btn btn-sm btn-outline-primary" onclick="editCustomer('${c._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
