@@ -20,6 +20,7 @@ from app.tenancy import (
     role_required,
     to_object_id,
 )
+from app.utils.affair_reference import next_reference
 
 affairs_bp = Blueprint("affairs", __name__, url_prefix="/api/affairs")
 
@@ -249,6 +250,7 @@ def create_affair():
     affair_dict = affair_data.model_dump(by_alias=True)
     affair_dict["customer_id"] = customer["_id"]
     affair_dict["company_id"] = customer.get("company_id") or current_company_id()
+    affair_dict["reference"] = next_reference(db, affair_dict["company_id"], now)
     affair_dict["service_ids"] = [s["_id"] for s in services]
     affair_dict["assigned_to"] = assignee["_id"] if assignee else None
     affair_dict["created_by"] = ObjectId(current_user_id())

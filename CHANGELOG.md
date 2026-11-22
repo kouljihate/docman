@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.9.0] - 2026-11-22
+
+### Added
+- Every affair now carries a readable reference built as `A` + `YYMMDD` +
+  `-` + `HHMM`, e.g. `A261122-1930`, generated when the affair is created and
+  unique inside the company (a second affair opened in the same minute moves to
+  the next free minute).
+- `backend/migrate_affair_references.py` backfills references on existing
+  affairs from their creation time; it skips affairs that already have one.
+- The affairs table shows an **Affair ID** column, the edit dialog shows the
+  reference read-only, the activities list shows the reference next to the
+  affair name and the customer space shows it before the affair name.
+
 ## [3.8.1] - 2026-11-22
 
 ### Added

@@ -173,6 +173,7 @@ TRANSLATIONS = {
         "no_available_tasks": "No available tasks",
         "no_selected_tasks": "No tasks selected",
         # Affairs
+        "affair_id": "Affair ID",
         "affair_name": "Affair Name",
         "affair_type": "Type",
         "affair_address": "Address",
@@ -485,6 +486,7 @@ TRANSLATIONS = {
         "fill_required": "يرجى ملء جميع الحقول المطلوبة.",
         "screenshots": "لقطات الشاشة",
         "screenshots_hint": "اختياري. قم بتحميل لقطات الشاشة (PNG, JPG, GIF, WebP). يتم حفظ كل صورة بجانب ملف الطلب.",
+        "affair_id": "رقم الملف",
         "affair_name": "اسم الملف",
         "affair_type": "النوع",
         "affair_address": "العنوان",
@@ -805,6 +807,7 @@ TRANSLATIONS = {
         "fill_required": "Veuillez remplir tous les champs obligatoires.",
         "screenshots": "Captures d'écran",
         "screenshots_hint": "Optionnel. Téléchargez des captures d'écran (PNG, JPG, GIF, WebP). Chaque image est enregistrée avec le fichier de demande.",
+        "affair_id": "N° d'affaire",
         "affair_name": "Nom de l'affaire",
         "affair_type": "Type",
         "affair_address": "Adresse",

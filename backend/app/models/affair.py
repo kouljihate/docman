@@ -31,6 +31,7 @@ class AffairUpdate(BaseModel):
 
 class AffairResponse(BaseModel):
     id: str = Field(alias="_id")
+    reference: Optional[str] = None
     name: str
     affair_type: str
     customer_id: str

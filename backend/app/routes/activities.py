@@ -196,6 +196,7 @@ def list_activities():
                 "assigned_by_name": "$assigned_by_user.full_name",
                 "customer_name": "$customer_user.full_name",
                 "affair_name": "$affair.name",
+                "affair_reference": "$affair.reference",
                 "task_names": {"$map": {"input": "$tasks", "as": "t", "in": "$$t.title"}},
             }
         },

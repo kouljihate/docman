@@ -19,6 +19,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
+                        <th>{{ _('affair_id') }}</th>
                         <th>{{ _('affair_name') }}</th>
                         <th>{{ _('affair_type') }}</th>
                         <th>{{ _('customer') }}</th>
@@ -30,7 +31,7 @@
                     </tr>
                 </thead>
                 <tbody id="affairsTableBody">
-                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -47,6 +48,10 @@
             <form id="affairForm" onsubmit="return handleAffairSubmit(event)">
                 <div class="modal-body">
                     <input type="hidden" id="editAffairId">
+                    <div class="col-12 d-none" id="affairReferenceWrap">
+                        <label class="form-label">{{ _('affair_id') }}</label>
+                        <input type="text" class="form-control font-monospace" id="affairReference" readonly>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-8">
                             <label class="form-label">{{ _('affair_name') }} *</label>
@@ -168,7 +173,7 @@ async function loadAffairs() {
     const data = await apiRequest('/affairs/');
     const tbody = document.getElementById('affairsTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>';
         return;
     }
     affairsData = data;
@@ -186,6 +191,7 @@ async function loadAffairs() {
             : '<span class="text-muted">-</span>';
         return `
         <tr>
+            <td><code class="text-nowrap">${a.reference || '-'}</code></td>
             <td><strong>${a.name}</strong></td>
             <td><span class="badge bg-${a.affair_type === 'enterprise' ? 'primary' : 'secondary'}">${a.affair_type}</span></td>
             <td>${a.customer_name || '-'}</td>
@@ -213,6 +219,7 @@ function openCreateModal() {
     document.getElementById('affairModalTitle').textContent = '{{ _('create_affair') }}';
     document.getElementById('editAffairId').value = '';
     document.getElementById('affairForm').reset();
+    document.getElementById('affairReferenceWrap').classList.add('d-none');
     document.getElementById('affairError').classList.add('d-none');
     document.getElementById('generateWrap').style.display = '';
     renderServiceChoices([]);
@@ -226,6 +233,8 @@ async function editAffair(id) {
     editingAffairId = id;
     document.getElementById('affairModalTitle').textContent = '{{ _('edit_affair') }}';
     document.getElementById('editAffairId').value = id;
+    document.getElementById('affairReference').value = data.reference || '-';
+    document.getElementById('affairReferenceWrap').classList.remove('d-none');
     const form = document.getElementById('affairForm');
     form.name.value = data.name || '';
     form.affair_type.value = data.affair_type || 'individual';

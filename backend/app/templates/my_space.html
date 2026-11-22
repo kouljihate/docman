@@ -22,7 +22,7 @@
                 <ul class="list-group list-group-flush">
                     {% for affair in affairs %}
                     <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                        <span><i class="bi bi-file-earmark-text me-2 text-muted"></i>{{ affair.name }}</span>
+                        <span><i class="bi bi-file-earmark-text me-2 text-muted"></i>{% if affair.reference %}<code class="me-2">{{ affair.reference }}</code>{% endif %}{{ affair.name }}</span>
                         <span class="badge text-bg-light border">{{ affair.status or '' }}</span>
                     </li>
                     {% endfor %}
