@@ -71,6 +71,42 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="taskEditModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('edit_task') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="taskEditForm" onsubmit="return saveTaskEdit(event)">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('task_title') }} *</label>
+                        <input type="text" name="title" class="form-control" required minlength="2" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('task_description') }}</label>
+                        <textarea name="description" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">{{ _('status') }}</label>
+                        <select name="status" class="form-select">
+                            <option value="pending">{{ _('pending') }}</option>
+                            <option value="in_progress">{{ _('in_progress') }}</option>
+                            <option value="completed">{{ _('completed') }}</option>
+                            <option value="cancelled">{{ _('cancelled') }}</option>
+                        </select>
+                    </div>
+                    <div id="taskEditError" class="alert alert-danger d-none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                    <button type="submit" class="btn btn-cse">{{ _('save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -97,8 +133,8 @@ async function loadTasks() {
             <td><strong>${t.title}</strong></td>
             <td class="text-muted text-truncate" style="max-width:300px">${t.description || '-'}</td>
             <td class="table-actions" onclick="event.stopPropagation()">
-                <button class="btn btn-sm btn-outline-info" onclick="openDetail('${t._id}')" title="{{ _('task_detail') }}">
-                    <i class="bi bi-eye"></i>
+                <button class="btn btn-sm btn-outline-primary" onclick="openEditTask('${t._id}')" title="{{ _('edit_task') }}">
+                    <i class="bi bi-pencil"></i>
                 </button>
                 {% if user.role == 'local_admin' %}
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${t._id}')" title="{{ _('delete') }}">
@@ -108,6 +144,46 @@ async function loadTasks() {
             </td>
         </tr>
     `).join('');
+}
+
+let editingTaskId = null;
+
+function openEditTask(id) {
+    const t = tasksData.find(x => x._id === id);
+    if (!t) return;
+    editingTaskId = id;
+    const form = document.getElementById('taskEditForm');
+    form.title.value = t.title || '';
+    form.description.value = t.description || '';
+    form.status.value = t.status || 'pending';
+    document.getElementById('taskEditError').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('taskEditModal')).show();
+}
+
+async function saveTaskEdit(e) {
+    e.preventDefault();
+    const form = e.target;
+    const errorEl = document.getElementById('taskEditError');
+    errorEl.classList.add('d-none');
+
+    const data = await apiRequest(`/tasks/${editingTaskId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            title: form.title.value,
+            description: form.description.value,
+            status: form.status.value,
+        }),
+    });
+
+    if (data && data._id) {
+        bootstrap.Modal.getInstance(document.getElementById('taskEditModal')).hide();
+        showToast('{{ _('update') }}');
+        loadTasks();
+    } else {
+        errorEl.textContent = (data && data.error) || 'Error';
+        errorEl.classList.remove('d-none');
+    }
+    return false;
 }
 
 async function openDetail(id) {

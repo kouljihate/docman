@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.9.1] - 2026-11-22
+
+### Changed
+- Task list actions are now **Edit** and **Delete**: the eye button was replaced
+  by a pencil that opens an edit dialog for the task title, description and
+  status (saved through `PUT /api/tasks/<id>`), and Delete stays available to
+  local admins. Clicking the row still opens the task details.
+
 ## [3.9.0] - 2026-11-22
 
 ### Added
