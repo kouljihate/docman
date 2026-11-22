@@ -190,3 +190,79 @@ document.addEventListener('show.bs.modal', (event) => {
     content.style.setProperty('--modal-body-bg', `url("/static/img/${body}")`);
     content.style.setProperty('--modal-footer-bg', `url("/static/img/${footer}")`);
 });
+
+/* ---- Global loading overlay -------------------------------------------
+ * A centred animated GIF covers the page while something is loading: the
+ * initial page load, any link navigation, any form submit and every
+ * fetch() call. showLoader()/hideLoader() are counted so overlapping
+ * requests keep the overlay up until the last one finishes.
+ */
+let appLoaderPending = 0;
+
+function showLoader() {
+    const loader = document.getElementById('app-loader');
+    if (!loader) return;
+    appLoaderPending += 1;
+    loader.classList.add('is-visible');
+}
+
+function hideLoader() {
+    appLoaderPending = Math.max(0, appLoaderPending - 1);
+    if (appLoaderPending > 0) return;
+    document.querySelectorAll('#app-loader.is-visible').forEach((loader) => {
+        loader.classList.remove('is-visible');
+    });
+}
+
+function resetLoader() {
+    appLoaderPending = 0;
+    document.querySelectorAll('#app-loader.is-visible').forEach((loader) => {
+        loader.classList.remove('is-visible');
+    });
+}
+
+// Every fetch keeps the overlay visible until its response arrives.
+const nativeFetch = window.fetch.bind(window);
+window.fetch = function (input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (url.indexOf('/api/health') !== -1) {
+        // Background status polling must not flash the overlay.
+        return nativeFetch(input, init);
+    }
+    showLoader();
+    return nativeFetch(input, init).finally(() => hideLoader());
+};
+
+// Links: show the overlay as soon as the navigation starts.
+document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!(event.target instanceof Element)) return;
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    const href = link.getAttribute('href') || '';
+    if (!href || href.charAt(0) === '#' || href.toLowerCase().startsWith('javascript:')) return;
+    if (link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+    showLoader();
+    // A script may cancel the navigation: don't leave the overlay up then.
+    setTimeout(() => { if (event.defaultPrevented) hideLoader(); }, 0);
+});
+
+// Forms: same treatment for a classic post/reload.
+document.addEventListener('submit', (event) => {
+    if (event.defaultPrevented) return;
+    showLoader();
+    setTimeout(() => { if (event.defaultPrevented) hideLoader(); }, 0);
+});
+
+// Cover the gap between leaving the page and the next one painting.
+window.addEventListener('beforeunload', showLoader);
+
+// The markup starts with the overlay visible for the initial load; clear it
+// once the page is fully loaded (or when restored from the back/forward cache).
+window.addEventListener('load', () => {
+    if (appLoaderPending === 0) resetLoader();
+});
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) resetLoader();
+});

@@ -4,6 +4,15 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.6.3] - 2026-11-22
+
+### Added
+- Global loading overlay: a centred animated GIF (`static/img/loader.gif`)
+  fades in on the initial page load, on every link navigation and form
+  submit, and for the whole life of any `fetch()` request, then fades out
+  when loading finishes. Concurrent requests are counted so the overlay
+  stays up until the last one completes.
+
 ## [3.6.2] - 2026-11-20
 
 ### Added
