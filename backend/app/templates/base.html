@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ company.company_name if company else _('app_name') }}{% endblock %}</title>
+    {% if page_info %}<meta name="page-id" content="{{ page_info.id }}">{% endif %}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/cosmo/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="/static/css/app.css">
@@ -39,6 +40,93 @@
     </div>
 
     {% block body %}{% endblock %}
+
+    {% if page_info %}
+    <div class="modal fade" id="pageInfoModal" tabindex="-1" aria-labelledby="pageInfoModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pageInfoModalTitle">
+                        <i class="bi bi-info-circle me-2"></i>Page information
+                        <span class="badge text-bg-primary ms-2 page-id-badge">{{ page_info.id }}</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row small mb-3">
+                        <dt class="col-sm-3">Page ID</dt>
+                        <dd class="col-sm-9"><code>{{ page_info.id }}</code></dd>
+                        <dt class="col-sm-3">Title</dt>
+                        <dd class="col-sm-9">{{ page_info.title }}</dd>
+                        <dt class="col-sm-3">Route</dt>
+                        <dd class="col-sm-9"><code>{{ page_info.route }}</code></dd>
+                        <dt class="col-sm-3">Template</dt>
+                        <dd class="col-sm-9"><code>{{ page_info.template }}</code></dd>
+                        <dt class="col-sm-3">Layout</dt>
+                        <dd class="col-sm-9">{{ page_info.layout }} (footer page-id badge)</dd>
+                        <dt class="col-sm-3">Roles</dt>
+                        <dd class="col-sm-9 mb-0">
+                            {% for role in page_info.roles %}
+                            <span class="badge text-bg-light border me-1">{{ role }}</span>
+                            {% endfor %}
+                        </dd>
+                    </dl>
+
+                    <p class="mb-3">{{ page_info.summary }}</p>
+
+                    <h6 class="text-primary"><i class="bi bi-stars me-1"></i>Features</h6>
+                    <ul class="small">
+                        {% for feature in page_info.features %}
+                        <li>{{ feature }}</li>
+                        {% endfor %}
+                    </ul>
+
+                    <h6 class="text-primary"><i class="bi bi-window-stack me-1"></i>Modals &amp; panels ({{ page_info.modals|length }})</h6>
+                    {% if page_info.modals %}
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle small mb-3">
+                            <thead class="table-light">
+                                <tr><th>ID</th><th>Element</th><th>Title</th><th>Purpose</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for modal in page_info.modals %}
+                                <tr>
+                                    <td><code>{{ modal.id }}</code></td>
+                                    <td><code>#{{ modal.element }}</code></td>
+                                    <td>{{ modal.title }}</td>
+                                    <td class="text-muted">{{ modal.purpose }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="small text-muted">This page has no modal of its own.</p>
+                    {% endif %}
+
+                    <h6 class="text-primary"><i class="bi bi-hdd-network me-1"></i>API endpoints</h6>
+                    {% if page_info.apis %}
+                    <ul class="small">
+                        {% for endpoint in page_info.apis %}
+                        <li><code>{{ endpoint }}</code></li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="small text-muted">This page is rendered from server-side data and calls no API of its own.</p>
+                    {% endif %}
+
+                    <p class="small text-muted mb-0 border-top pt-2">
+                        {{ page_catalogue.pages }} pages and {{ page_catalogue.modals }} modals are registered.
+                        Identifiers are defined in <code>backend/app/page_registry.py</code>.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>

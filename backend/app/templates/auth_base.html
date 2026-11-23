@@ -15,6 +15,11 @@
             <hr class="my-4">
             <div class="auth-card-footer">
                 <span class="version-badge">v{{ version }}</span>
+                {% if page_info %}
+                <button type="button" class="page-id-badge badge text-bg-primary ms-2"
+                        data-bs-toggle="modal" data-bs-target="#pageInfoModal"
+                        title="Page information: {{ page_info.title }}">{{ page_info.id }}</button>
+                {% endif %}
                 <div class="language-selector">
                     <div class="btn-group btn-group-sm" role="group">
                         <a href="?lang=en" class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == 'en' }}">EN</a>

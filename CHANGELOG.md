@@ -4,6 +4,23 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.10.0] - 2026-11-23
+
+### Added
+- `backend/app/page_registry.py` catalogues every page and dialog with a
+  stable identifier: pages use `PG-...` ids keyed by Flask endpoint (route,
+  template, roles, summary, features, modals and API endpoints), dialogs use
+  `MDL-...` ids keyed by their DOM element id.
+- Every page footer now shows the id of the page as a small badge (right side
+  of the dashboard footer and of the sign-in/registration card). Clicking it
+  opens a **Page information** dialog listing the page id, title, route,
+  template, roles, features, every modal/panel on the page with its id and
+  purpose, and the API endpoints it calls. The id is also exposed as
+  `<meta name="page-id">`.
+- `tests/test_page_registry.py` checks that every registered page maps to a
+  real Flask endpoint, that ids are unique, that each page's modals exist in
+  its template and that the badge renders with the right id.
+
 ## [3.9.3] - 2026-11-22
 
 ### Changed

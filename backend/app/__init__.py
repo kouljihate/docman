@@ -8,6 +8,7 @@ from urllib.parse import quote
 from flask import Flask, make_response, redirect, render_template, request
 from flask_jwt_extended import JWTManager, decode_token
 
+from app.page_registry import catalogue_summary, page_info as lookup_page_info
 from app.socketio_server import socketio
 from app.tenancy import (
     CUSTOMER,
@@ -173,6 +174,10 @@ def create_app():
             now=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
             version=VERSION,
             company=company,
+            # Catalogue entry of the page being rendered (None for API routes),
+            # used by the footer page-id badge and its information dialog.
+            page_info=lookup_page_info(request.endpoint),
+            page_catalogue=catalogue_summary(),
         )
 
     # ── Web Routes ──────────────────────────────────────────

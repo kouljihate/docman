@@ -723,3 +723,22 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 .table-pagination .page-link {
     cursor: pointer;
 }
+
+/* ---- Page identifier badge (footer) ------------------------------------ */
+.page-id-badge {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    text-decoration: none;
+    vertical-align: middle;
+}
+
+.page-id-badge:hover,
+.page-id-badge:focus-visible {
+    text-decoration: none;
+    filter: brightness(1.12);
+}
