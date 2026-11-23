@@ -23,7 +23,19 @@
 </head>
 <body>
     <div id="app-loader" class="app-loader is-visible" role="status" aria-live="polite" aria-label="{{ _('loading') }}">
-        <img src="/static/img/loader.gif" alt="{{ _('loading') }}" width="120" height="120">
+        <div class="app-loader-card">
+            <svg class="app-loader-spinner" viewBox="0 0 50 50" aria-hidden="true" focusable="false">
+                <defs>
+                    <linearGradient id="appLoaderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#1a237e"></stop>
+                        <stop offset="100%" stop-color="#7986cb"></stop>
+                    </linearGradient>
+                </defs>
+                <circle class="app-loader-track" cx="25" cy="25" r="20"></circle>
+                <circle class="app-loader-arc" cx="25" cy="25" r="20" stroke="url(#appLoaderGradient)"></circle>
+            </svg>
+            <span class="app-loader-text">{{ _('loading') }}</span>
+        </div>
     </div>
 
     {% block body %}{% endblock %}

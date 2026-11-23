@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.9.3] - 2026-11-22
+
+### Changed
+- The loading overlay no longer uses the old animated GIF. It now shows a
+  frosted card with a gradient ring spinner and the translated "Loading"
+  caption, drawn in SVG/CSS so it stays sharp on every screen and respects
+  `prefers-reduced-motion`. `static/img/loader.gif` was removed.
+
 ## [3.9.2] - 2026-11-22
 
 ### Fixed
