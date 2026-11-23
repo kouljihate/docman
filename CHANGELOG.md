@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.10.1] - 2026-11-23
+
+### Changed
+- The **Affaires** menu entry now sits directly after **Dashboard** in the
+  local admin navigation, so the affairs list is the first entry after the
+  dashboard.
+
 ## [3.10.0] - 2026-11-23
 
 ### Added
