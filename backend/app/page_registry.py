@@ -141,7 +141,7 @@ MODALS = {
         "id": "MDL-PAGE-INFO",
         "element": "pageInfoModal",
         "title": "Page details",
-        "purpose": "Opened by the page-id badge in the shared footer; lists everything registered about the page.",
+        "purpose": "Opened by the page-id badge in the shared footer; lists everything registered about the page and can share, copy or screenshot its content.",
     },
 }
 

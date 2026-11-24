@@ -101,6 +101,11 @@ def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_co
     assert ">PG-TASKS<" in body
     assert "Page Information" not in body
     assert "Page information" not in body
+    # Share / copy / screenshot actions sit next to the dialog's close button.
+    assert 'id="pageInfoShare"' in body
+    assert 'id="pageInfoCopy"' in body
+    assert 'id="pageInfoScreenshot"' in body
+    assert "html2canvas" in body
     assert "version-badge" in body
 
 

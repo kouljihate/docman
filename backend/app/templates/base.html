@@ -83,6 +83,20 @@
                         <i class="bi bi-info-circle me-2"></i>
                         <span class="badge text-bg-primary page-id-badge">{{ page_info.id }}</span>
                     </h5>
+                    <div class="page-info-actions d-flex align-items-center gap-1 ms-auto me-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="pageInfoShare"
+                                title="{{ _('share') }}" aria-label="{{ _('share') }}">
+                            <i class="bi bi-share"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="pageInfoCopy"
+                                title="{{ _('copy') }}" aria-label="{{ _('copy') }}">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="pageInfoScreenshot"
+                                title="{{ _('screenshot') }}" aria-label="{{ _('screenshot') }}">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                    </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -164,6 +178,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/socket.io@4.8.1/client-dist/socket.io.min.js"></script>
+    {% if page_info %}<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>{% endif %}
     <script>
         // Strings the shared table paginator needs; app.js is static, so the
         // translated labels are handed over from the server here.
@@ -206,6 +221,94 @@
         })();
     </script>
     <script src="/static/js/app.js"></script>
+    {% if page_info %}
+    <script>
+        // Share / copy / screenshot actions of the page-info dialog, next to its
+        // close button.
+        (function () {
+            var modal = document.getElementById('pageInfoModal');
+            if (!modal) return;
+
+            var info = {
+                app: {{ (company.company_name if company else _('app_name'))|tojson }},
+                id: {{ page_info.id|tojson }},
+                title: {{ page_info.title|tojson }},
+                route: {{ page_info.route|tojson }},
+                summary: {{ page_info.summary|tojson }},
+            };
+            var labels = {
+                copied: {{ _('copied')|tojson }},
+                screenshotSaved: {{ _('screenshot_saved')|tojson }},
+                failed: {{ _('action_failed')|tojson }},
+            };
+
+            function infoText() {
+                return info.app + ' — ' + info.id + '\n' +
+                    'Title: ' + info.title + '\n' +
+                    'Route: ' + info.route + '\n' +
+                    'URL: ' + window.location.origin + info.route + '\n\n' +
+                    info.summary;
+            }
+
+            function copyText(text) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    return navigator.clipboard.writeText(text);
+                }
+                return new Promise(function (resolve, reject) {
+                    var area = document.createElement('textarea');
+                    area.value = text;
+                    area.setAttribute('readonly', '');
+                    area.style.position = 'absolute';
+                    area.style.left = '-9999px';
+                    document.body.appendChild(area);
+                    area.select();
+                    var ok = false;
+                    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                    document.body.removeChild(area);
+                    if (ok) { resolve(); } else { reject(new Error('copy failed')); }
+                });
+            }
+
+            document.getElementById('pageInfoCopy').addEventListener('click', function () {
+                copyText(infoText())
+                    .then(function () { showToast(labels.copied); })
+                    .catch(function () { showToast(labels.failed, 'danger'); });
+            });
+
+            document.getElementById('pageInfoShare').addEventListener('click', function () {
+                var url = window.location.origin + info.route;
+                if (navigator.share) {
+                    navigator
+                        .share({ title: info.app + ' — ' + info.id, text: infoText(), url: url })
+                        .catch(function () { /* the user dismissed the share sheet */ });
+                    return;
+                }
+                copyText(infoText() + '\n' + url)
+                    .then(function () { showToast(labels.copied); })
+                    .catch(function () { showToast(labels.failed, 'danger'); });
+            });
+
+            document.getElementById('pageInfoScreenshot').addEventListener('click', function () {
+                var card = modal.querySelector('.modal-content');
+                if (!card || typeof html2canvas !== 'function') {
+                    showToast(labels.failed, 'danger');
+                    return;
+                }
+                html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true })
+                    .then(function (canvas) {
+                        var link = document.createElement('a');
+                        link.download = 'page-info-' + info.id + '.png';
+                        link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast(labels.screenshotSaved);
+                    })
+                    .catch(function () { showToast(labels.failed, 'danger'); });
+            });
+        })();
+    </script>
+    {% endif %}
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.16.0] - 2026-11-24
+
+### Added
+- **Share, Copy and Screenshot actions** in the page-info dialog header, next
+  to its close button. Share uses the native share sheet (falling back to the
+  clipboard), Copy puts the page id, title, route, URL and summary on the
+  clipboard, and Screenshot saves the dialog as a `page-info-<ID>.png` image
+  (via html2canvas). New `share`, `copy`, `screenshot`, `copied`,
+  `screenshot_saved` and `action_failed` translations in EN / عربي / FR.
+
 ## [3.15.1] - 2026-11-24
 
 ### Changed
