@@ -44,6 +44,8 @@ def _serialize(company, db):
     data["customers_count"] = db.users.count_documents(
         {"company_id": company_id, "role": "customer"}
     )
+    # Each company owns many affairs; the list page links to them.
+    data["affairs_count"] = db.affairs.count_documents({"company_id": company_id})
     data["documents_count"] = db.documents.count_documents({"company_id": company_id})
     data["tasks_count"] = db.tasks.count_documents({"company_id": company_id})
     return data

@@ -8,16 +8,33 @@
 </div>
 
 <div class="row g-3 mb-4" id="statsCards">
+    {% if user_role == 'main_admin' %}
     <div class="col-6 col-lg">
-        <a href="{{ '/affairs' if user_role == 'local_admin' else '/companies' }}" class="text-decoration-none">
+        <a href="/companies" class="text-decoration-none">
             <div class="card stat-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="stat-icon bg-white bg-opacity-25 text-white">
+                        <i class="bi bi-buildings"></i>
+                    </div>
+                    <div class="text-white">
+                        <div class="stat-value" id="totalCompanies">-</div>
+                        <div class="stat-label">{{ _('companies') }}</div>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+    <div class="col-6 col-lg">
+        <a href="/affairs" class="text-decoration-none">
+            <div class="card stat-card" style="background: linear-gradient(135deg, #5b8def 0%, #3f5efb 100%);">
                 <div class="card-body d-flex align-items-center gap-3">
                     <div class="stat-icon bg-white bg-opacity-25 text-white">
                         <i class="bi bi-folder"></i>
                     </div>
                     <div class="text-white">
                         <div class="stat-value" id="totalAffairs">-</div>
-                        <div class="stat-label">{{ _('companies_affairs') }}</div>
+                        <div class="stat-label">{{ _('affairs') }}</div>
                     </div>
                 </div>
             </div>
@@ -106,6 +123,10 @@ async function loadDashboard() {
 
     if (data.affairs_count !== undefined) {
         document.getElementById('totalAffairs').textContent = data.affairs_count;
+    }
+    const companiesEl = document.getElementById('totalCompanies');
+    if (companiesEl && data.companies_count !== undefined) {
+        companiesEl.textContent = data.companies_count;
     }
     if (data.services_count !== undefined) {
         document.getElementById('totalServices').textContent = data.services_count;

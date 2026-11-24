@@ -16,6 +16,7 @@ from app.tenancy import (
     current_company_id,
     current_user_id,
     is_customer,
+    is_main_admin,
     local_admin_required,
     role_required,
     to_object_id,
@@ -161,9 +162,20 @@ def _affair_pipeline(match):
                 "as": "services",
             }
         },
+        # The owning tenant, so the platform view can show one column per affair.
+        {
+            "$lookup": {
+                "from": "companies",
+                "localField": "company_id",
+                "foreignField": "_id",
+                "as": "company",
+            }
+        },
+        {"$unwind": {"path": "$company", "preserveNullAndEmptyArrays": True}},
         {
             "$addFields": {
                 "customer_name": "$customer.full_name",
+                "company_name": "$company.company_name",
                 "assigned_to_name": "$assignee.full_name",
                 "assigned_to_role": "$assignee.role",
                 "service_names": {
@@ -171,7 +183,7 @@ def _affair_pipeline(match):
                 },
             }
         },
-        {"$project": {"customer": 0, "assignee": 0, "services": 0}},
+        {"$project": {"customer": 0, "assignee": 0, "services": 0, "company": 0}},
     ]
 
 
@@ -282,8 +294,18 @@ def list_affairs():
     db = get_db()
     identity = get_jwt_identity()
 
-    customer_id = request.args.get("customer_id")
     query = company_scope()
+
+    # Only the platform admin can look across tenants and pick one company;
+    # everyone else is already pinned by company_scope().
+    company_id = request.args.get("company_id")
+    if company_id and is_main_admin():
+        scoped_company = to_object_id(company_id)
+        if scoped_company is None:
+            return jsonify({"error": "Invalid company id"}), 400
+        query["company_id"] = scoped_company
+
+    customer_id = request.args.get("customer_id")
     if customer_id:
         query["customer_id"] = to_object_id(customer_id)
     if is_customer():

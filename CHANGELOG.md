@@ -4,6 +4,23 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.15.0] - 2026-11-24
+
+### Added
+- **Affairs page for the platform admin** (`PG-AFFAIRS`): a read-only list of
+  every company's affairs with a **Company** column, reachable from the sidebar
+  and from the dashboard, and filterable per company with
+  `/affairs?company=<id>`.
+- **Affairs counter per company** in the Companies table; it links to that
+  company's affairs (`GET /api/companies/` gains `affairs_count`).
+- `GET /api/affairs/?company_id=<id>` for the platform admin, and `company_id`
+  / `company_name` on every affair response.
+
+### Changed
+- The dashboard no longer merges the two entities into one "Companies Affairs"
+  card: **Companies** and **Affairs** are separate KPI cards, each linking to
+  its own page (the Companies card is only shown to the platform admin).
+
 ## [3.14.1] - 2026-11-24
 
 ### Changed

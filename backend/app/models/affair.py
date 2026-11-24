@@ -34,6 +34,8 @@ class AffairResponse(BaseModel):
     reference: Optional[str] = None
     name: str
     affair_type: str
+    company_id: Optional[str] = None
+    company_name: Optional[str] = None
     customer_id: str
     customer_name: Optional[str] = None
     address: Optional[str] = None
@@ -54,7 +56,7 @@ class AffairResponse(BaseModel):
     @classmethod
     def convert_object_id(cls, data):
         if isinstance(data, dict):
-            for key in ("_id", "customer_id", "assigned_to"):
+            for key in ("_id", "company_id", "customer_id", "assigned_to"):
                 if key in data and isinstance(data[key], ObjectId):
                     data[key] = str(data[key])
             if "service_ids" in data and data["service_ids"]:

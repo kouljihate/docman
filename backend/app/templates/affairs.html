@@ -8,9 +8,11 @@
         <h4 class="mb-0"><i class="bi bi-folder me-2"></i>{{ _('affair_list') }}</h4>
         <small class="text-muted">{{ _('manage_affairs') }}</small>
     </div>
+    {% if user_role != 'main_admin' %}
     <button class="btn btn-cse" onclick="openCreateModal()">
         <i class="bi bi-plus-lg me-1"></i>{{ _('create_affair') }}
     </button>
+    {% endif %}
 </div>
 
 <div class="card">
@@ -20,6 +22,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('affair_id') }}</th>
+                        {% if user_role == 'main_admin' %}<th>{{ _('company') }}</th>{% endif %}
                         <th>{{ _('affair_name') }}</th>
                         <th>{{ _('affair_type') }}</th>
                         <th>{{ _('customer') }}</th>
@@ -31,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody id="affairsTableBody">
-                    <tr><td colspan="9" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="{{ 10 if user_role == 'main_admin' else 9 }}" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -123,8 +126,16 @@ let editingAffairId = null;
 let affairsData = [];
 let affairServices = [];
 let affairAssignees = [];
+// The platform admin lists every company's affairs read-only; a local admin
+// works inside their own company only.
+const isMainAdmin = {{ 'true' if user_role == 'main_admin' else 'false' }};
+const companyFilter = {{ (request.args.get('company') or '')|tojson }};
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (isMainAdmin) {
+        loadAffairs();
+        return;
+    }
     const [customers, services, assignees] = await Promise.all([
         apiRequest('/customers/'),
         apiRequest('/services/'),
@@ -170,10 +181,12 @@ function renderServiceChoices(selected) {
 }
 
 async function loadAffairs() {
-    const data = await apiRequest('/affairs/');
+    const query = companyFilter ? `?company_id=${encodeURIComponent(companyFilter)}` : '';
+    const data = await apiRequest('/affairs/' + query);
     const tbody = document.getElementById('affairsTableBody');
+    const columnCount = isMainAdmin ? 10 : 9;
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${columnCount}" class="text-center text-muted">{{ _('no_affairs') }}</td></tr>`;
         return;
     }
     affairsData = data;
@@ -189,17 +202,10 @@ async function loadAffairs() {
             ? `<span class="badge rounded-pill bg-info">${a.activity_count}</span>
                <small class="text-muted ms-1">${a.completed_activity_count || 0} {{ _('completed_label') }}</small>`
             : '<span class="text-muted">-</span>';
-        return `
-        <tr>
-            <td><code class="text-nowrap">${a.reference || '-'}</code></td>
-            <td><strong>${a.name}</strong></td>
-            <td><span class="badge bg-${a.affair_type === 'enterprise' ? 'primary' : 'secondary'}">${a.affair_type}</span></td>
-            <td>${a.customer_name || '-'}</td>
-            <td>${serviceBadges}</td>
-            <td>${assignee}</td>
-            <td>${activities}</td>
-            <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
-            <td class="table-actions">
+        const companyCell = isMainAdmin
+            ? `<td>${a.company_name || '-'}</td>`
+            : '';
+        const actions = isMainAdmin ? '' : `
                 <button class="btn btn-sm btn-outline-info" onclick="generateActivities('${a._id}')" title="{{ _('generate_activities') }}">
                     <i class="bi bi-magic"></i>
                 </button>
@@ -208,8 +214,19 @@ async function loadAffairs() {
                 </button>
                 <button class="btn btn-sm btn-outline-danger" onclick="deleteAffair('${a._id}')" title="{{ _('delete') }}">
                     <i class="bi bi-trash"></i>
-                </button>
-            </td>
+                </button>`;
+        return `
+        <tr>
+            <td><code class="text-nowrap">${a.reference || '-'}</code></td>
+            ${companyCell}
+            <td><strong>${a.name}</strong></td>
+            <td><span class="badge bg-${a.affair_type === 'enterprise' ? 'primary' : 'secondary'}">${a.affair_type}</span></td>
+            <td>${a.customer_name || '-'}</td>
+            <td>${serviceBadges}</td>
+            <td>${assignee}</td>
+            <td>${activities}</td>
+            <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
+            <td class="table-actions">${actions}</td>
         </tr>`;
     }).join('');
 }

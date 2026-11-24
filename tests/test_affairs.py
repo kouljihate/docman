@@ -100,6 +100,63 @@ def test_affair_references_are_unique_per_company(
     assert {a["reference"] for a in listed} == set(references)
 
 
+def _seed_affair(db, company_id, customer_id, name, reference):
+    now = datetime.now(timezone.utc)
+    db.affairs.insert_one(
+        {
+            "name": name,
+            "affair_type": "individual",
+            "reference": reference,
+            "company_id": company_id,
+            "customer_id": customer_id,
+            "service_ids": [],
+            "assigned_to": None,
+            "created_at": now,
+            "updated_at": now,
+        }
+    )
+
+
+def test_platform_admin_lists_affairs_per_company(client, db, make_token, make_user, make_company):
+    acme = make_company("Acme", "acme")
+    other = make_company("Other", "other")
+    acme_customer = make_user("customer", "acme-customer", acme["_id"])
+    other_customer = make_user("customer", "other-customer", other["_id"])
+    root = make_user("main_admin", "root")
+    _seed_affair(db, acme["_id"], acme_customer["_id"], "Dossier A", "A260101-0001")
+    _seed_affair(db, acme["_id"], acme_customer["_id"], "Dossier B", "A260101-0002")
+    _seed_affair(db, other["_id"], other_customer["_id"], "Dossier C", "A260101-0003")
+    _login(client, make_token, root)
+
+    listing = client.get("/api/affairs/").get_json()
+    assert {a["company_name"] for a in listing} == {"Acme", "Other"}
+    assert all(a["company_id"] for a in listing)
+
+    filtered = client.get(f"/api/affairs/?company_id={acme['_id']}").get_json()
+    assert {a["name"] for a in filtered} == {"Dossier A", "Dossier B"}
+
+    counts = {c["company_name"]: c["affairs_count"] for c in client.get("/api/companies/").get_json()}
+    assert counts == {"Acme": 2, "Other": 1}
+
+    page = client.get(f"/affairs?company={acme['_id']}").get_data(as_text=True)
+    assert 'id="affairsTableBody"' in page
+    assert f"const companyFilter = \"{acme['_id']}\"" in page
+
+
+def test_local_admin_cannot_filter_another_company(client, db, make_token, make_user, make_company):
+    acme = make_company("Acme", "acme")
+    other = make_company("Other", "other")
+    acme_customer = make_user("customer", "acme-customer", acme["_id"])
+    other_customer = make_user("customer", "other-customer", other["_id"])
+    admin = make_user("local_admin", "acme-admin", acme["_id"])
+    _seed_affair(db, acme["_id"], acme_customer["_id"], "Dossier A", "A260101-0001")
+    _seed_affair(db, other["_id"], other_customer["_id"], "Dossier C", "A260101-0002")
+    _login(client, make_token, admin)
+
+    listing = client.get(f"/api/affairs/?company_id={other['_id']}").get_json()
+    assert [a["name"] for a in listing] == ["Dossier A"]
+
+
 def test_affairs_page_renders(client, db, make_token, make_user, make_company):
     company = make_company("Acme", "acme")
     admin = make_user("local_admin", "acme-admin", company["_id"])

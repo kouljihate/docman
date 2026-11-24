@@ -21,13 +21,14 @@
                         <th>{{ _('ice') }}</th>
                         <th>{{ _('local_admin') }}</th>
                         <th>{{ _('customer') }}</th>
+                        <th>{{ _('affairs') }}</th>
                         <th>{{ _('documents') }}</th>
                         <th>{{ _('status') }}</th>
                         <th class="text-end">{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="companiesBody">
-                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="9" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -194,11 +195,11 @@ async function loadCompanies() {
     const body = document.getElementById('companiesBody');
     const data = await apiRequest('/companies/');
     if (!Array.isArray(data)) {
-        body.innerHTML = `<tr><td colspan="8" class="text-center text-danger">${(data && data.error) || 'Error'}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${(data && data.error) || 'Error'}</td></tr>`;
         return;
     }
     if (!data.length) {
-        body.innerHTML = `<tr><td colspan="8" class="text-center text-muted">{{ _('no_companies') }}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="9" class="text-center text-muted">{{ _('no_companies') }}</td></tr>`;
         return;
     }
     body.innerHTML = data.map(c => `
@@ -211,6 +212,11 @@ async function loadCompanies() {
             <td>${c.ice || '-'}</td>
             <td>${c.admins_count}</td>
             <td>${c.customers_count}</td>
+            <td>
+                <a href="/affairs?company=${c._id}" class="text-decoration-none" title="{{ _('affairs') }}">
+                    <span class="badge rounded-pill text-bg-light border"><i class="bi bi-folder me-1"></i>${c.affairs_count || 0}</span>
+                </a>
+            </td>
             <td>${c.documents_count}</td>
             <td>${c.is_active
                 ? '<span class="badge text-bg-success">{{ _('active') }}</span>'

@@ -290,7 +290,7 @@ def create_app():
         return render_template("task_create.html", active_page="tasks")
 
     @app.route("/affairs")
-    @page_roles(LOCAL_ADMIN)
+    @page_roles(MAIN_ADMIN, LOCAL_ADMIN)
     def affairs_page():
         return render_template("affairs.html", active_page="affairs")
 
