@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from bson import ObjectId
 from flask import Blueprint, jsonify
@@ -30,6 +30,8 @@ def _empty():
         "total_activities": 0,
         "companies_count": 0,
         "documents_count": 0,
+        "payments_due_count": 0,
+        "payments_overdue_count": 0,
         "open_tasks": None,
         "completed_tasks": None,
         "recent_activities": [],
@@ -86,6 +88,17 @@ def stats():
 
         if role == "main_admin":
             board["companies_count"] = db.companies.count_documents({})
+
+        # Payment reminders of the local admin: pending payments already past
+        # their due date, and those falling due within the coming week.
+        if role == "local_admin":
+            pending_payments = {**company_scope(), "status": "pending"}
+            board["payments_overdue_count"] = db.payments.count_documents(
+                {**pending_payments, "due_date": {"$lt": now}}
+            )
+            board["payments_due_count"] = db.payments.count_documents(
+                {**pending_payments, "due_date": {"$lt": now + timedelta(days=7)}}
+            )
 
         recent_match = company_scope() if role != CUSTOMER else {"company_id": current_company_id(), "customer_id": ObjectId(identity)}
         recent = list(db.activities.find(recent_match).sort("created_at", -1).limit(10))

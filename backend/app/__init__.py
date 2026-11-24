@@ -110,6 +110,7 @@ def create_app():
     from app.routes.customers import customers_bp
     from app.routes.dashboard import dashboard_bp
     from app.routes.documents import documents_bp
+    from app.routes.payments import payments_bp
     from app.routes.reports import reports_bp
     from app.routes.requests import requests_bp
     from app.routes.services import services_bp
@@ -130,6 +131,7 @@ def create_app():
         activities_bp,
         requests_bp,
         documents_bp,
+        payments_bp,
         company_bp,
     ):
         app.register_blueprint(blueprint)
@@ -343,6 +345,11 @@ def create_app():
     @page_roles(LOCAL_ADMIN)
     def customer_detail_page(customer_id):
         return render_template("customer_detail.html", active_page="customers", customer_id=customer_id)
+
+    @app.route("/payments")
+    @page_roles(LOCAL_ADMIN)
+    def payments_page():
+        return render_template("payments.html", active_page="payments")
 
     @app.route("/requests")
     @login_required_page

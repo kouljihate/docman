@@ -1,0 +1,272 @@
+{% extends "dashboard_base.html" %}
+
+{% block title %}{{ _('payments') }} - {{ company.company_name if company else _('app_name') }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-cash-coin me-2"></i>{{ _('payments') }}</h4>
+    <div class="d-flex gap-2">
+        <select class="form-select form-select-sm" id="paymentStatusFilter" onchange="loadPayments()" style="width:auto">
+            <option value="">{{ _('all') }}</option>
+            <option value="pending">{{ _('payment_pending') }}</option>
+            <option value="paid">{{ _('payment_paid') }}</option>
+            <option value="cancelled">{{ _('payment_cancelled') }}</option>
+        </select>
+        <button type="button" class="btn btn-cse btn-sm" onclick="openPaymentModal()">
+            <i class="bi bi-plus-lg me-1"></i>{{ _('new_payment') }}
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>{{ _('customers') }}</th>
+                        <th>{{ _('payment_description') }}</th>
+                        <th class="text-end">{{ _('payment_amount') }}</th>
+                        <th>{{ _('due_date') }}</th>
+                        <th>{{ _('status') }}</th>
+                        <th>{{ _('actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">{{ _('loading') }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="paymentModalTitle">{{ _('new_payment') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="paymentForm" onsubmit="return savePayment(event)">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('customer') }} *</label>
+                            <select name="customer_id" class="form-select" required>
+                                <option value="">{{ _('select_customer') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ _('payment_description') }}</label>
+                            <input type="text" name="label" class="form-control" maxlength="200"
+                                   placeholder="{{ _('payment_description_hint') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('payment_amount') }} *</label>
+                            <input type="number" name="amount" class="form-control" min="0" step="0.01" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">{{ _('currency') }}</label>
+                            <input type="text" name="currency" class="form-control" value="MAD" maxlength="8">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('due_date') }} *</label>
+                            <input type="date" name="due_date" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">{{ _('status') }}</label>
+                            <select name="status" class="form-select">
+                                <option value="pending">{{ _('payment_pending') }}</option>
+                                <option value="paid">{{ _('payment_paid') }}</option>
+                                <option value="cancelled">{{ _('payment_cancelled') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ _('payment_method') }}</label>
+                            <select name="method" class="form-select">
+                                <option value="">{{ _('payment_method_none') }}</option>
+                                <option value="cash">{{ _('payment_cash') }}</option>
+                                <option value="card">{{ _('payment_card') }}</option>
+                                <option value="transfer">{{ _('payment_transfer') }}</option>
+                                <option value="check">{{ _('payment_check') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">{{ _('notes') }}</label>
+                            <input type="text" name="notes" class="form-control">
+                        </div>
+                    </div>
+                    <div id="paymentError" class="alert alert-danger d-none mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                    <button type="submit" class="btn btn-cse">{{ _('save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let paymentsData = [];
+let customersLoaded = false;
+let editingPaymentId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadPayments();
+});
+
+async function loadCustomers() {
+    if (customersLoaded) return;
+    const select = document.querySelector('#paymentForm [name=customer_id]');
+    const customers = await apiRequest('/customers/');
+    if (Array.isArray(customers)) {
+        customers.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c._id;
+            option.textContent = c.full_name || c.username;
+            select.appendChild(option);
+        });
+    }
+    customersLoaded = true;
+}
+
+function statusBadge(payment) {
+    const map = {
+        pending: ['bg-warning', '{{ _('payment_pending') }}'],
+        paid: ['bg-success', '{{ _('payment_paid') }}'],
+        cancelled: ['bg-secondary', '{{ _('payment_cancelled') }}'],
+        overdue: ['bg-danger', '{{ _('payment_overdue') }}'],
+    };
+    const [cls, text] = map[payment.display_status] || map.pending;
+    return `<span class="badge ${cls}">${text}</span>`;
+}
+
+async function loadPayments() {
+    const status = document.getElementById('paymentStatusFilter').value;
+    const data = await apiRequest('/payments/' + (status ? `?status=${encodeURIComponent(status)}` : ''));
+    const tbody = document.getElementById('paymentsTableBody');
+
+    if (!Array.isArray(data) || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">{{ _('no_payments') }}</td></tr>`;
+        return;
+    }
+
+    paymentsData = data;
+    tbody.innerHTML = data.map(p => `
+        <tr>
+            <td>${p.customer_name || '-'}</td>
+            <td>${p.label || '-'}</td>
+            <td class="text-end fw-semibold">${formatPaymentAmount(p.amount, p.currency)}</td>
+            <td>${(p.due_date || '').slice(0, 10)}</td>
+            <td>${statusBadge(p)}</td>
+            <td class="table-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="openPaymentModal('${p._id}')" title="{{ _('edit') }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                ${p.status !== 'paid' ? `
+                <button class="btn btn-sm btn-outline-success" onclick="markPaid('${p._id}')" title="{{ _('payment_mark_paid') }}">
+                    <i class="bi bi-check-lg"></i>
+                </button>` : ''}
+                <button class="btn btn-sm btn-outline-danger" onclick="deletePayment('${p._id}')" title="{{ _('delete') }}">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function formatPaymentAmount(amount, currency) {
+    const parts = Number(amount || 0).toFixed(2).split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return parts.join('.') + ' ' + (currency || 'MAD');
+}
+
+async function openPaymentModal(id) {
+    await loadCustomers();
+    const form = document.getElementById('paymentForm');
+    const errorEl = document.getElementById('paymentError');
+    form.reset();
+    errorEl.classList.add('d-none');
+    editingPaymentId = id || null;
+
+    document.getElementById('paymentModalTitle').textContent =
+        id ? '{{ _('edit_payment') }}' : '{{ _('new_payment') }}';
+    form.currency.value = 'MAD';
+
+    if (id) {
+        const p = paymentsData.find(x => x._id === id) || await apiRequest(`/payments/${id}`);
+        if (!p) return;
+        form.customer_id.value = p.customer_id || '';
+        form.label.value = p.label || '';
+        form.amount.value = p.amount;
+        form.currency.value = p.currency || 'MAD';
+        form.due_date.value = (p.due_date || '').slice(0, 10);
+        form.status.value = p.status || 'pending';
+        form.method.value = p.method || '';
+        form.notes.value = p.notes || '';
+    }
+
+    new bootstrap.Modal(document.getElementById('paymentModal')).show();
+}
+
+async function savePayment(e) {
+    e.preventDefault();
+    const form = e.target;
+    const errorEl = document.getElementById('paymentError');
+    errorEl.classList.add('d-none');
+
+    const payload = {
+        customer_id: form.customer_id.value,
+        label: form.label.value || null,
+        amount: Number(form.amount.value),
+        currency: form.currency.value || 'MAD',
+        due_date: form.due_date.value,
+        status: form.status.value,
+        method: form.method.value || null,
+        notes: form.notes.value || null,
+    };
+
+    const data = editingPaymentId
+        ? await apiRequest(`/payments/${editingPaymentId}`, { method: 'PUT', body: JSON.stringify(payload) })
+        : await apiRequest('/payments/', { method: 'POST', body: JSON.stringify(payload) });
+
+    if (data && data._id) {
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+        showToast(editingPaymentId ? '{{ _('update') }}' : '{{ _('create') }}');
+        loadPayments();
+    } else {
+        errorEl.textContent = (data && data.error) || '{{ _('error_occurred') }}';
+        errorEl.classList.remove('d-none');
+    }
+    return false;
+}
+
+async function markPaid(id) {
+    const data = await apiRequest(`/payments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ status: 'paid' }),
+    });
+    if (data && data._id) {
+        showToast('{{ _('payment_marked_paid') }}');
+        loadPayments();
+    } else {
+        showToast((data && data.error) || '{{ _('error_occurred') }}', 'danger');
+    }
+}
+
+function deletePayment(id) {
+    const p = paymentsData.find(x => x._id === id);
+    showDeleteModal('{{ _('payment') }}', p ? (p.label || p.customer_name || '') : '', () => {
+        apiRequest(`/payments/${id}`, { method: 'DELETE' }).then(() => {
+            showToast('{{ _('delete') }}');
+            loadPayments();
+        });
+    });
+}
+</script>
+{% endblock %}

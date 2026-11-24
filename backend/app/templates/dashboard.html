@@ -7,6 +7,16 @@
     <h4 class="mb-0 fw-bold"><i class="bi bi-grid-1x2-fill me-2"></i>{{ _('dashboard') }}</h4>
 </div>
 
+{% if user_role == 'local_admin' %}
+<div class="alert alert-warning d-none align-items-center gap-2" id="paymentAlert" role="alert">
+    <i class="bi bi-exclamation-triangle-fill"></i>
+    <span id="paymentAlertText"></span>
+    <a href="/payments" class="btn btn-sm btn-warning ms-auto">
+        <i class="bi bi-cash-coin me-1"></i>{{ _('view_payments') }}
+    </a>
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4" id="statsCards">
     {% if user_role == 'main_admin' %}
     <div class="col-6 col-lg">
@@ -139,6 +149,21 @@ async function loadDashboard() {
     }
     if (data.total_activities !== undefined) {
         document.getElementById('totalActivities').textContent = data.total_activities;
+    }
+
+    const paymentAlert = document.getElementById('paymentAlert');
+    if (paymentAlert) {
+        const due = data.payments_due_count || 0;
+        const overdue = data.payments_overdue_count || 0;
+        if (due > 0) {
+            let text = '{{ _('payment_alert_due') }}'.replace('{count}', due);
+            if (overdue > 0) {
+                text += ' ' + '{{ _('payment_alert_overdue') }}'.replace('{count}', overdue);
+            }
+            document.getElementById('paymentAlertText').textContent = text;
+            paymentAlert.classList.remove('d-none');
+            paymentAlert.classList.add('d-flex');
+        }
     }
 
     const activitiesEl = document.getElementById('activitiesList');

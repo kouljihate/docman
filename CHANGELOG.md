@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.17.0] - 2026-11-24
+
+### Added
+- **Payments module** (`PG-PAYMENTS`, `/payments`) for local admins only: a
+  per-customer payment list (amount, currency, due date, method, notes, status)
+  with create / edit dialog, one-click **mark as paid**, delete confirmation and
+  a status filter. Pending payments past their due date are flagged **Overdue**.
+- `GET|POST /api/payments/`, `GET|PUT|DELETE /api/payments/<id>`, scoped to the
+  caller's company and restricted to `local_admin`.
+- **Due-payment alert on the dashboard**: local admins see how many payments are
+  due within seven days and how many are overdue, with a link to `/payments`
+  (`payments_due_count` / `payments_overdue_count` in `/api/dashboard/stats`).
+
 ## [3.16.0] - 2026-11-24
 
 ### Added
