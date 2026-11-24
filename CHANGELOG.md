@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.15.1] - 2026-11-24
+
+### Changed
+- The page-id badge's dialog no longer repeats a `Page information` heading:
+  its title is now the info icon plus the page id (for example `PG-TASKS`), and
+  the dialog is registered as **Page details**.
+
 ## [3.15.0] - 2026-11-24
 
 ### Added
