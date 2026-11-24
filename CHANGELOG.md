@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.17.1] - 2026-11-24
+
+### Added
+- **`seed_companies.py`**: creates a batch of clearly named test companies
+  (`Test Company 001` … `Test Company 100` by default, with Moroccan legal and
+  contact fields), skips names that already exist so it can be re-run, and
+  supports `--count`, `--prefix`, `--dry-run` and `--delete` (which removes the
+  prefixed companies together with every document carrying their
+  `company_id`).
+
 ## [3.17.0] - 2026-11-24
 
 ### Added
