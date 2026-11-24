@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.12.0] - 2026-11-23
+
+### Added
+- The dashboard opens with a **Companies Affairs** counter card, placed before
+  the services / users / customers / activities cards. It counts every affair
+  visible to the signed-in profile (their company, or all companies for the
+  platform admin) and links to `/affairs` (local admin) or `/companies`
+  (platform admin). `GET /api/dashboard/stats` now returns `affairs_count`.
+
+### Changed
+- The five KPI cards share one equal-width row on large screens and wrap two
+  per row on phones.
+
 ## [3.11.0] - 2026-11-23
 
 ### Added

@@ -26,6 +26,7 @@ def _empty():
         "users_count": 0,
         "customers_count": 0,
         "services_count": 0,
+        "affairs_count": 0,
         "total_activities": 0,
         "companies_count": 0,
         "documents_count": 0,
@@ -75,6 +76,7 @@ def stats():
         board["users_count"] = db.users.count_documents({**user_scope, "is_active": True})
         board["customers_count"] = db.users.count_documents({**user_scope, "role": CUSTOMER})
         board["services_count"] = db.services.count_documents(company_scope())
+        board["affairs_count"] = db.affairs.count_documents(company_scope())
         board["documents_count"] = db.documents.count_documents(company_scope())
         board["total_activities"] = db.activities.count_documents(company_scope())
 

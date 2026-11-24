@@ -183,7 +183,7 @@ PAGES = {
         "roles": ["main_admin", "local_admin"],
         "summary": "Company / platform overview: KPI cards and charts built from the statistics endpoint. Employees and customers are redirected to their own dashboards.",
         "features": [
-            "KPI cards (customers, services, tasks, documents)",
+            "KPI cards (companies affairs, services, users, customers, activities)",
             "Task status and per-service charts",
             "Recent activity feed",
         ],
