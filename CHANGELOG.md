@@ -4,6 +4,18 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.13.0] - 2026-11-23
+
+### Added
+- **Edit** action on every row of the Companies page (`PG-COMPANIES`): the
+  shared company dialog now opens in edit mode with the tenant's profile
+  pre-filled and saves through `PUT /api/companies/<id>`. The first local
+  admin block stays create-only.
+
+### Changed
+- The action column of the Companies table uses circular icon buttons, like
+  the Users and Customers tables.
+
 ## [3.12.0] - 2026-11-23
 
 ### Added

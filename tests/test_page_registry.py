@@ -86,6 +86,19 @@ def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_co
     assert "version-badge" in body
 
 
+def test_companies_actions_are_circular_and_include_edit(client, make_token, make_user):
+    admin = make_user("main_admin", "root")
+    client.set_cookie("access_token", make_token(admin))
+
+    body = client.get("/companies").get_data(as_text=True)
+
+    # table-actions rounds every button in the action column.
+    assert 'class="table-actions"' in body
+    assert "editCompany(" in body
+    assert 'id="companyModalTitle"' in body
+    assert "saveCompany(event)" in body
+
+
 def test_language_switch_remembers_the_choice_and_returns_to_the_page(client):
     response = client.get("/set-language?lang=fr&next=/tasks?status=open")
 

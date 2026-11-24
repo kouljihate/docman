@@ -38,10 +38,10 @@
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">{{ _('create_company') }}</h5>
+                <h5 class="modal-title" id="companyModalTitle">{{ _('create_company') }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="companyForm" onsubmit="return createCompany(event)">
+            <form id="companyForm" onsubmit="return saveCompany(event)">
                 <div class="modal-body">
                     <h6 class="text-primary mb-3"><i class="bi bi-info-circle me-1"></i>{{ _('company_info') }}</h6>
                     <div class="row g-3 mb-3">
@@ -154,6 +154,7 @@
                         </div>
                     </div>
 
+                    <div id="companyAdminSection">
                     <h6 class="text-primary mb-3"><i class="bi bi-person-badge me-1"></i>{{ _('admin_account') }}</h6>
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -172,6 +173,7 @@
                             <label class="form-label">{{ _('password') }}</label>
                             <input type="password" class="form-control" name="admin_password" minlength="6">
                         </div>
+                    </div>
                     </div>
 
                     <div id="companyError" class="alert alert-danger d-none mt-3"></div>
@@ -213,30 +215,75 @@ async function loadCompanies() {
             <td>${c.is_active
                 ? '<span class="badge text-bg-success">{{ _('active') }}</span>'
                 : '<span class="badge text-bg-secondary">{{ _('inactive') }}</span>'}</td>
-            <td class="text-end">
-                <button class="btn btn-sm btn-outline-primary" onclick="toggleCompany('${c._id}', ${!c.is_active})">
+            <td class="table-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="editCompany('${c._id}')" title="{{ _('edit') }}">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary" onclick="toggleCompany('${c._id}', ${!c.is_active})" title="${c.is_active ? '{{ _('inactive') }}' : '{{ _('active') }}'}">
                     <i class="bi bi-power"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-danger ms-1" onclick="deleteCompany('${c._id}')">
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteCompany('${c._id}')" title="{{ _('delete') }}">
                     <i class="bi bi-trash"></i>
                 </button>
             </td>
         </tr>`).join('');
 }
 
-function openCompanyModal() {
+// Company profile fields edited in the shared dialog.
+const COMPANY_FIELDS = ['company_name', 'code', 'slogan', 'legal_form', 'ice', 'rc', 'tax_id',
+    'patente', 'cnss', 'capital', 'address', 'city', 'region', 'postal_code', 'country',
+    'email', 'phone', 'website'];
+// null when creating, the company id when editing an existing tenant.
+let editingCompanyId = null;
+
+function resetCompanyForm() {
     const form = document.getElementById('companyForm');
     form.reset();
+    COMPANY_FIELDS.forEach(function (name) {
+        if (form[name]) form[name].value = '';
+    });
     form.logo.value = '';
     form.country.value = 'Maroc';
     const preview = document.getElementById('companyLogoPreview');
     preview.src = '';
     preview.classList.add('d-none');
     document.getElementById('companyError').classList.add('d-none');
+}
+
+function openCompanyModal() {
+    editingCompanyId = null;
+    resetCompanyForm();
+    document.getElementById('companyModalTitle').textContent = '{{ _('create_company') }}';
+    document.getElementById('companyAdminSection').classList.remove('d-none');
     new bootstrap.Modal(document.getElementById('companyModal')).show();
 }
 
-async function createCompany(e) {
+async function editCompany(id) {
+    const data = await apiRequest(`/companies/${id}`);
+    if (!data || data.error) {
+        showToast((data && data.error) || 'Error', 'danger');
+        return;
+    }
+    editingCompanyId = id;
+    resetCompanyForm();
+    const form = document.getElementById('companyForm');
+    COMPANY_FIELDS.forEach(function (name) {
+        if (form[name] && data[name] != null) form[name].value = data[name];
+    });
+    if (!form.country.value) form.country.value = 'Maroc';
+    form.logo.value = data.logo || '';
+    if (data.logo) {
+        const preview = document.getElementById('companyLogoPreview');
+        preview.src = data.logo;
+        preview.classList.remove('d-none');
+    }
+    // The first local admin is only created with the company.
+    document.getElementById('companyAdminSection').classList.add('d-none');
+    document.getElementById('companyModalTitle').textContent = '{{ _('edit_company') }}';
+    new bootstrap.Modal(document.getElementById('companyModal')).show();
+}
+
+async function saveCompany(e) {
     e.preventDefault();
     const form = e.target;
     const errorEl = document.getElementById('companyError');
@@ -272,13 +319,21 @@ async function createCompany(e) {
         email: form.email.value.trim(),
         phone: form.phone.value.trim(),
         website: form.website.value.trim(),
-        admin_full_name: form.admin_full_name.value.trim() || null,
-        admin_username: form.admin_username.value.trim() || null,
-        admin_email: form.admin_email.value.trim() || null,
-        admin_password: form.admin_password.value || null,
     };
 
-    const data = await apiRequest('/companies/', { method: 'POST', body: JSON.stringify(payload) });
+    let data;
+    if (editingCompanyId) {
+        data = await apiRequest(`/companies/${editingCompanyId}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    } else {
+        payload.admin_full_name = form.admin_full_name.value.trim() || null;
+        payload.admin_username = form.admin_username.value.trim() || null;
+        payload.admin_email = form.admin_email.value.trim() || null;
+        payload.admin_password = form.admin_password.value || null;
+        data = await apiRequest('/companies/', { method: 'POST', body: JSON.stringify(payload) });
+    }
     btn.disabled = false;
 
     if (!data || data.error) {
@@ -288,6 +343,7 @@ async function createCompany(e) {
     }
     bootstrap.Modal.getInstance(document.getElementById('companyModal')).hide();
     showToast('{{ _('settings_saved') }}');
+    editingCompanyId = null;
     loadCompanies();
     return false;
 }

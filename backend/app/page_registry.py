@@ -52,8 +52,8 @@ MODALS = {
     "companyModal": {
         "id": "MDL-COMPANY-FORM",
         "element": "companyModal",
-        "title": "Create company",
-        "purpose": "Main admin creates a tenant together with its first local admin.",
+        "title": "Create / edit company",
+        "purpose": "Main admin creates a tenant together with its first local admin, or edits an existing company's profile (the admin block is create-only).",
     },
     "userModal": {
         "id": "MDL-USER-FORM",
@@ -213,10 +213,11 @@ PAGES = {
         "layout": "dashboard",
         "template": "companies.html",
         "roles": ["main_admin"],
-        "summary": "Tenant management for the platform main admin: create a company with its first local admin, activate or deactivate it and delete a tenant.",
+        "summary": "Tenant management for the platform main admin: create a company with its first local admin, edit its profile, activate or deactivate it and delete a tenant.",
         "features": [
             "Company table with logo, legal identifiers and status",
             "Create company dialog (profile, ICE/RC/IF, contact, social links)",
+            "Edit company profile from the circular action buttons of each row",
             "Activate / deactivate and delete a tenant",
         ],
         "modals": ["companyModal"],
