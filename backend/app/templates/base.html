@@ -41,6 +41,39 @@
 
     {% block body %}{% endblock %}
 
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalTitle">
+                        <i class="bi bi-gear me-2"></i>{{ _('settings') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="get" action="{{ url_for('set_language') }}">
+                    <div class="modal-body">
+                        <p class="form-label fw-semibold mb-2">{{ _('select_language') }}</p>
+                        <input type="hidden" name="next" value="{{ footer_next }}">
+                        {% for code, label in [('en', 'English'), ('ar', 'العربية'), ('fr', 'Français')] %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="lang"
+                                   id="settingsLang-{{ code }}" value="{{ code }}"
+                                   {{ 'checked' if lang == code }} required>
+                            <label class="form-check-label" for="settingsLang-{{ code }}">{{ label }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-check-lg me-1"></i>{{ _('save') }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     {% if page_info %}
     <div class="modal fade" id="pageInfoModal" tabindex="-1" aria-labelledby="pageInfoModalTitle" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
@@ -144,25 +177,28 @@
             dbDisconnected: {{ _('database_disconnected')|tojson }},
         };
 
-        // Footer database status: the pill exists on every page.
+        // Footer database status icon: orange while probing, green when the
+        // database answers, red when it does not.
         (function () {
-            var pill = document.getElementById('db-status');
-            if (!pill) return;
-            var label = pill.querySelector('.db-status-label');
+            var icon = document.getElementById('db-status');
+            if (!icon) return;
+            var states = { ok: 'dbConnected', err: 'dbDisconnected', checking: 'dbChecking' };
 
-            function setDbStatus(connected) {
-                pill.classList.toggle('db-ok', connected);
-                pill.classList.toggle('db-err', !connected);
-                var text = connected ? window.APP_I18N.dbConnected : window.APP_I18N.dbDisconnected;
-                pill.title = text;
-                if (label) label.textContent = text;
+            function setDbStatus(state) {
+                icon.classList.remove('db-ok', 'db-err', 'db-checking');
+                icon.classList.add('db-' + state);
+                icon.dataset.state = state;
+                var text = window.APP_I18N[states[state]];
+                icon.title = text;
+                icon.setAttribute('aria-label', text);
             }
 
             function checkDb() {
+                setDbStatus('checking');
                 fetch('/api/health')
                     .then(function (r) { return r.json(); })
-                    .then(function (data) { setDbStatus(data.db === 'connected'); })
-                    .catch(function () { setDbStatus(false); });
+                    .then(function (data) { setDbStatus(data.db === 'connected' ? 'ok' : 'err'); })
+                    .catch(function () { setDbStatus('err'); });
             }
 
             checkDb();

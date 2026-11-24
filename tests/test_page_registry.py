@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from app.page_registry import MODALS, PAGES, SHARED_MODALS, catalogue_summary, page_info
+from app.page_registry import BASE_MODALS, MODALS, PAGES, SHARED_MODALS, catalogue_summary, page_info
 
 BACKEND_DIR = Path(__file__).resolve().parents[1] / "backend"
 TEMPLATES = BACKEND_DIR / "app" / "templates"
@@ -50,18 +50,28 @@ def test_shared_modals_live_in_the_dashboard_layout():
         assert f'id="{MODALS[modal]["element"]}"' in source
 
 
+def test_base_modals_live_in_the_base_template():
+    source = _template("base.html")
+    for modal in BASE_MODALS:
+        assert f'id="{MODALS[modal]["element"]}"' in source
+
+
 def test_page_info_resolves_endpoints_and_expands_modals():
     assert page_info("unknown_endpoint") is None
 
     login = page_info("login_page")
     assert login["id"] == "PG-LOGIN"
-    assert login["modals"] == []
 
     tasks = page_info("tasks_page")
     modal_elements = [modal["element"] for modal in tasks["modals"]]
     assert "taskDetailModal" in modal_elements
     assert "taskEditModal" in modal_elements
     assert set(SHARED_MODALS) <= set(modal_elements)
+    assert set(BASE_MODALS) <= set(modal_elements)
+
+    # The settings dialog is rendered by base.html, so the auth pages carry it
+    # too even though they have no dashboard dialogs.
+    assert [modal["element"] for modal in login["modals"]] == list(BASE_MODALS)
 
 
 def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_company):
@@ -78,10 +88,15 @@ def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_co
     assert 'id="pageInfoModal"' in body
     assert 'id="taskEditModal"' in body
 
-    # The shared three-column footer: name, settings, two badges.
+    # The shared three-column footer: name, settings + database icons, badges.
     assert 'class="footer app-footer' in body
     assert 'id="db-status"' in body
+    assert 'id="settingsModal"' in body
+    assert 'data-bs-target="#settingsModal"' in body
+    assert "bi bi-gear" in body
+    assert "bi bi-database-fill" in body
     assert "set-language" in body
+    assert 'name="lang"' in body
     assert "Page Information" in body
     assert "version-badge" in body
 

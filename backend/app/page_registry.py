@@ -8,6 +8,10 @@ modals and API endpoints of the page are always one click away.
 Modals are keyed by their DOM element id and identified by ``MDL-...``.
 """
 
+# Dialog rendered by ``base.html``: the footer settings icon opens it on every
+# page, signed in or not.
+BASE_MODALS = ("settingsModal",)
+
 # Dialogs that live in ``dashboard_base.html`` and therefore appear on every
 # dashboard-backed page.
 SHARED_MODALS = (
@@ -19,6 +23,12 @@ SHARED_MODALS = (
 )
 
 MODALS = {
+    "settingsModal": {
+        "id": "MDL-SETTINGS",
+        "element": "settingsModal",
+        "title": "Settings",
+        "purpose": "Opened by the gear icon in the shared footer; picks the interface language and applies it through GET /set-language.",
+    },
     "sidebarOffcanvas": {
         "id": "PNL-SIDEBAR",
         "element": "sidebarOffcanvas",
@@ -147,7 +157,7 @@ PAGES = {
         "features": [
             "Sign-in form (username + password)",
             "Redirect back to the page that required a login",
-            "Shared footer: app name, language switcher EN / AR / FR, database status, Page Information and version badges",
+            "Shared footer: app name, settings icon (language dialog) and tri-state database status icon, Page Information and version badges",
             "Link to the registration page",
         ],
         "modals": [],
@@ -165,7 +175,7 @@ PAGES = {
             "Full name, username, email, phone and password form",
             "Company picker fed by /api/companies/public",
             "Bootstrap of the first main admin account",
-            "Shared footer: app name, language switcher, database status, Page Information and version badges",
+            "Shared footer: app name, settings icon, database status icon, Page Information and version badges",
         ],
         "modals": [],
         "apis": [
@@ -504,7 +514,9 @@ PAGES = {
 def _resolve(page):
     """Return a page entry with its modal ids expanded to catalogue entries."""
     entry = dict(page)
-    ids = list(SHARED_MODALS) if page["layout"] == "dashboard" else []
+    ids = list(BASE_MODALS)
+    if page["layout"] == "dashboard":
+        ids += [modal for modal in SHARED_MODALS if modal not in ids]
     ids += [modal for modal in page["modals"] if modal not in ids]
     entry["modals"] = [MODALS[modal] for modal in ids]
     return entry

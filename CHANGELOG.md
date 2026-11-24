@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.14.0] - 2026-11-24
+
+### Changed
+- The middle column of the shared footer is now icon-only: a gear that opens a
+  **Settings** dialog to pick the interface language (EN / عربي / FR) and a
+  database icon that reports the connection state by colour — orange while the
+  health check runs, green when connected, red when disconnected.
+
+### Added
+- `#settingsModal` in `base.html`, so the language form (`GET /set-language`)
+  is reachable from every page, including the sign-in and registration
+  screens. Registered as `MDL-SETTINGS` in the page catalogue.
+
 ## [3.13.0] - 2026-11-23
 
 ### Added

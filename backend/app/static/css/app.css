@@ -746,17 +746,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     line-height: 1.3;
 }
 
-.app-footer .app-footer-setting-label {
-    white-space: nowrap;
-}
-
-.app-footer .language-selector .btn {
-    min-width: 42px;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.72rem;
-    line-height: 1.3;
-}
-
 .app-footer .page-id-badge,
 .app-footer .version-badge {
     font-family: inherit;
@@ -765,41 +754,41 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     line-height: 1.3;
 }
 
-/* Database status pill: grey while checking, green / red afterwards. */
-.db-status-badge {
+/* Footer icon buttons: settings (language dialog) and database status. */
+.app-footer .app-footer-icon {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.3rem 0.7rem;
-    font-size: 0.7rem;
-    font-weight: 500;
-    transition: color 0.3s ease, border-color 0.3s ease;
-}
-
-.db-status-dot {
-    width: 0.5rem;
-    height: 0.5rem;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
     border-radius: 50%;
-    background: #adb5bd;
-    flex-shrink: 0;
+    background: none;
+    color: #6c757d;
+    font-size: 1rem;
+    line-height: 1;
+    transition: color 0.3s ease, background-color 0.2s ease;
 }
 
-.db-status-badge.db-ok {
-    color: #1e7e34;
-    border-color: #28a745 !important;
+.app-footer .app-footer-icon:hover,
+.app-footer .app-footer-icon:focus-visible {
+    color: #1a237e;
+    background: rgba(26, 35, 126, 0.08);
 }
 
-.db-status-badge.db-ok .db-status-dot {
-    background: #28a745;
+/* Database status icon: orange while connecting, green when connected,
+   red when the check fails. */
+.app-footer .db-status-icon.db-checking {
+    color: #fd7e14;
 }
 
-.db-status-badge.db-err {
-    color: #b02a37;
-    border-color: #dc3545 !important;
+.app-footer .db-status-icon.db-ok {
+    color: #28a745;
 }
 
-.db-status-badge.db-err .db-status-dot {
-    background: #dc3545;
+.app-footer .db-status-icon.db-err {
+    color: #dc3545;
 }
 
 /* The auth screen keeps its card centred above the shared footer. */

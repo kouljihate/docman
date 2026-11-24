@@ -2,7 +2,8 @@
 
    Three fixed columns:
      1. left   — application / company name (plus legal ids and social links)
-     2. middle — settings: language switcher and database status
+     2. middle — two icons: settings (opens the language dialog) and the live
+                 database status icon (green / orange / red)
      3. right  — two rounded badges: page information and app version
 #}
 <footer class="footer app-footer bg-light border-top py-2">
@@ -39,24 +40,18 @@
                 {% endif %}
             </div>
 
-            <!-- 2 · middle: settings → languages, database status -->
+            <!-- 2 · middle: settings icon (language dialog) + database icon -->
             <div class="col-12 col-md-4">
-                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
-                    <span class="text-muted app-footer-setting-label">
-                        <i class="bi bi-gear me-1"></i>{{ _('settings') }}:
-                    </span>
-                    <div class="btn-group btn-group-sm language-selector" role="group"
-                         aria-label="{{ _('select_language') }}">
-                        {% for code, label in [('en', 'EN'), ('ar', 'عربي'), ('fr', 'FR')] %}
-                        <a href="{{ url_for('set_language', lang=code, next=footer_next) }}"
-                           class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == code }}"
-                           title="{{ _('select_language') }}">{{ label }}</a>
-                        {% endfor %}
-                    </div>
-                    <span id="db-status" class="badge rounded-pill text-bg-light border db-status-badge"
-                          title="{{ _('database_checking') }}" aria-label="{{ _('database_status') }}">
-                        <span class="db-status-dot"></span>
-                        <span class="db-status-label">{{ _('database_checking') }}</span>
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-3">
+                    <button type="button" class="app-footer-icon"
+                            data-bs-toggle="modal" data-bs-target="#settingsModal"
+                            title="{{ _('settings') }}" aria-label="{{ _('settings') }}">
+                        <i class="bi bi-gear"></i>
+                    </button>
+                    <span id="db-status" class="app-footer-icon db-status-icon db-checking"
+                          role="status" tabindex="0" data-state="checking"
+                          title="{{ _('database_checking') }}" aria-label="{{ _('database_checking') }}">
+                        <i class="bi bi-database-fill"></i>
                     </span>
                 </div>
             </div>
