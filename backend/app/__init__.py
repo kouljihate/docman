@@ -3,7 +3,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from functools import wraps
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 from flask import Flask, make_response, redirect, render_template, request
 from flask_jwt_extended import JWTManager, decode_token
@@ -150,6 +150,14 @@ def create_app():
 
         user_id = str(user["_id"]) if user else None
 
+        # Where the footer language switcher returns to: the current page,
+        # keeping every query argument except the language itself.
+        footer_next = request.path
+        if request.args:
+            remaining = [(k, v) for k, v in request.args.items(multi=True) if k != "lang"]
+            if remaining:
+                footer_next += "?" + urlencode(remaining)
+
         company = None
         if user is not None:
             try:
@@ -174,6 +182,7 @@ def create_app():
             now=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
             version=VERSION,
             company=company,
+            footer_next=footer_next,
             # Catalogue entry of the page being rendered (None for API routes),
             # used by the footer page-id badge and its information dialog.
             page_info=lookup_page_info(request.endpoint),
@@ -190,7 +199,9 @@ def create_app():
     def login_page():
         if current_user() is not None:
             return redirect("/dashboard")
-        lang = request.args.get("lang", "en")
+        lang = request.args.get("lang") or request.cookies.get("lang") or "en"
+        if lang not in ("en", "ar", "fr"):
+            lang = "en"
         nxt = request.args.get("next", "")
         if not nxt.startswith("/") or nxt.startswith("//"):
             nxt = ""
@@ -207,7 +218,9 @@ def create_app():
 
     @app.route("/register")
     def register_page():
-        lang = request.args.get("lang", "en")
+        lang = request.args.get("lang") or request.cookies.get("lang") or "en"
+        if lang not in ("en", "ar", "fr"):
+            lang = "en"
         company = None
         try:
             from app.database import get_db
@@ -217,6 +230,19 @@ def create_app():
             pass
         resp = make_response(render_template("register.html", lang=lang, company=company))
         resp.set_cookie("lang", lang, max_age=365 * 24 * 3600)
+        return resp
+
+    @app.route("/set-language")
+    def set_language():
+        """Footer language switcher: remember the choice, then come back."""
+        lang = request.args.get("lang", "en")
+        if lang not in ("en", "ar", "fr"):
+            lang = "en"
+        nxt = request.args.get("next", "/dashboard")
+        if not nxt.startswith("/") or nxt.startswith("//"):
+            nxt = "/dashboard"
+        resp = make_response(redirect(nxt))
+        resp.set_cookie("lang", lang, max_age=365 * 24 * 3600, samesite="Lax")
         return resp
 
     @app.route("/dashboard")

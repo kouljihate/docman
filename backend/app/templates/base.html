@@ -139,7 +139,35 @@
             paginationNext: {{ _('pagination_next')|tojson }},
             paginationInfo: {{ _('pagination_info')|tojson }},
             paginationLabel: {{ _('pagination_label')|tojson }},
+            dbChecking: {{ _('database_checking')|tojson }},
+            dbConnected: {{ _('database_connected')|tojson }},
+            dbDisconnected: {{ _('database_disconnected')|tojson }},
         };
+
+        // Footer database status: the pill exists on every page.
+        (function () {
+            var pill = document.getElementById('db-status');
+            if (!pill) return;
+            var label = pill.querySelector('.db-status-label');
+
+            function setDbStatus(connected) {
+                pill.classList.toggle('db-ok', connected);
+                pill.classList.toggle('db-err', !connected);
+                var text = connected ? window.APP_I18N.dbConnected : window.APP_I18N.dbDisconnected;
+                pill.title = text;
+                if (label) label.textContent = text;
+            }
+
+            function checkDb() {
+                fetch('/api/health')
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) { setDbStatus(data.db === 'connected'); })
+                    .catch(function () { setDbStatus(false); });
+            }
+
+            checkDb();
+            setInterval(checkDb, 30000);
+        })();
     </script>
     <script src="/static/js/app.js"></script>
     {% block extra_scripts %}{% endblock %}

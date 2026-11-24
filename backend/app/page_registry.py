@@ -131,7 +131,7 @@ MODALS = {
         "id": "MDL-PAGE-INFO",
         "element": "pageInfoModal",
         "title": "Page information",
-        "purpose": "Opened by the footer page-id badge; lists everything registered about the page.",
+        "purpose": "Opened by the Page Information badge in the shared footer; lists everything registered about the page.",
     },
 }
 
@@ -147,11 +147,11 @@ PAGES = {
         "features": [
             "Sign-in form (username + password)",
             "Redirect back to the page that required a login",
-            "Language switcher EN / AR / FR and database status icon",
+            "Shared footer: app name, language switcher EN / AR / FR, database status, Page Information and version badges",
             "Link to the registration page",
         ],
         "modals": [],
-        "apis": ["POST /api/auth/login", "GET /api/health"],
+        "apis": ["POST /api/auth/login", "GET /api/health", "GET /set-language"],
     },
     "register_page": {
         "id": "PG-REGISTER",
@@ -165,10 +165,14 @@ PAGES = {
             "Full name, username, email, phone and password form",
             "Company picker fed by /api/companies/public",
             "Bootstrap of the first main admin account",
-            "Language switcher and database status icon",
+            "Shared footer: app name, language switcher, database status, Page Information and version badges",
         ],
         "modals": [],
-        "apis": ["GET /api/companies/public", "POST /api/auth/register"],
+        "apis": [
+            "GET /api/companies/public",
+            "POST /api/auth/register",
+            "GET /set-language",
+        ],
     },
     "dashboard_page": {
         "id": "PG-DASHBOARD",

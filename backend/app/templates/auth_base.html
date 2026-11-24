@@ -1,67 +1,21 @@
 {% extends "base.html" %}
 
 {% block body %}
-<div class="login-container">
-    <div class="login-card card shadow-lg">
-        <div class="card-body text-center">
-            <div class="login-logo mb-3">
-                <img src="/static/images/logo.png" alt="Logo" style="height:180px;width:180px;object-fit:contain;border-radius:24px;">
-            </div>
-            <h3 class="fw-bold mb-1" style="white-space:nowrap;font-size:clamp(1rem,4vw,1.5rem)">{{ company.company_name if company else _('app_name') }}</h3>
-            <p class="text-muted mb-4">{{ company.slogan if (company and company.slogan) else _('app_tagline') }}</p>
-
-            {% block auth_content %}{% endblock %}
-
-            <hr class="my-4">
-            <div class="auth-card-footer">
-                <span class="version-badge">v{{ version }}</span>
-                {% if page_info %}
-                <button type="button" class="page-id-badge badge text-bg-primary ms-2"
-                        data-bs-toggle="modal" data-bs-target="#pageInfoModal"
-                        title="Page information: {{ page_info.title }}">{{ page_info.id }}</button>
-                {% endif %}
-                <div class="language-selector">
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="?lang=en" class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == 'en' }}">EN</a>
-                        <a href="?lang=ar" class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == 'ar' }}">عربي</a>
-                        <a href="?lang=fr" class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == 'fr' }}">FR</a>
-                    </div>
+<div class="auth-page d-flex flex-column min-vh-100">
+    <div class="login-container flex-grow-1">
+        <div class="login-card card shadow-lg">
+            <div class="card-body text-center">
+                <div class="login-logo mb-3">
+                    <img src="/static/images/logo.png" alt="Logo" style="height:180px;width:180px;object-fit:contain;border-radius:24px;">
                 </div>
-                <span id="db-status" class="db-status-icon" title="{{ _('database_checking') }}" aria-label="{{ _('database_status') }}">
-                    <i class="bi bi-database"></i>
-                </span>
+                <h3 class="fw-bold mb-1" style="white-space:nowrap;font-size:clamp(1rem,4vw,1.5rem)">{{ company.company_name if company else _('app_name') }}</h3>
+                <p class="text-muted mb-4">{{ company.slogan if (company and company.slogan) else _('app_tagline') }}</p>
+
+                {% block auth_content %}{% endblock %}
             </div>
         </div>
     </div>
+
+    {% include "_footer.html" %}
 </div>
-
-<script>
-(function() {
-    var dbIcon = document.getElementById('db-status');
-    if (!dbIcon) return;
-
-    var dbConnectedText = {{ _('database_connected')|tojson }};
-    var dbDisconnectedText = {{ _('database_disconnected')|tojson }};
-
-    function setDbStatus(connected) {
-        dbIcon.className = 'db-status-icon ' + (connected ? 'db-ok' : 'db-err');
-        // Native tooltip on hover reports the current status.
-        dbIcon.title = connected ? dbConnectedText : dbDisconnectedText;
-    }
-
-    function checkDb() {
-        fetch('/api/health')
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                setDbStatus(data.db === 'connected');
-            })
-            .catch(function() {
-                setDbStatus(false);
-            });
-    }
-
-    checkDb();
-    setInterval(checkDb, 30000);
-})();
-</script>
 {% endblock %}

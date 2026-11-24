@@ -4,6 +4,25 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.11.0] - 2026-11-23
+
+### Added
+- A shared application footer on **every** page (dashboard layouts and the
+  sign-in / registration screens), always split into three columns:
+  - left: application / company name, social icons and legal identifiers;
+  - middle: settings — the EN / عربي / FR language switcher and a live
+    database status pill fed by `GET /api/health`;
+  - right: two rounded badges, **Page Information** (opens the page dialog)
+    and the running **version**.
+
+### Changed
+- `GET /set-language?lang=<code>&next=<path>` stores the language cookie and
+  returns to the current page, so the footer switcher works everywhere (it
+  used to exist only on the sign-in card). `next` is restricted to local
+  paths.
+- The sign-in / registration language follows the saved cookie.
+- Both footer badges use pill-shaped corners.
+
 ## [3.10.1] - 2026-11-23
 
 ### Changed

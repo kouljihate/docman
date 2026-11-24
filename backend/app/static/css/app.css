@@ -295,22 +295,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     color: #1a237e;
 }
 
-.auth-card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.auth-card-footer .language-selector {
-    flex: 1;
-    text-align: center;
-}
-
 .version-badge {
     font-size: 0.7rem;
     color: #6c757d;
     padding: 0.15rem 0.5rem;
-    border-radius: 3px;
+    border-radius: 50rem;
 }
 
 .db-status-icon {
@@ -326,10 +315,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 
 .db-status-icon.db-err {
     color: #dc3545;
-}
-
-[dir="rtl"] .auth-card-footer {
-    direction: ltr;
 }
 
 .activity-timeline {
@@ -489,11 +474,6 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 
     .login-card .card-body {
         padding: 1.5rem;
-    }
-
-    .auth-card-footer {
-        flex-wrap: wrap;
-        gap: 0.5rem;
     }
 
     .dual-pane {
@@ -731,7 +711,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     letter-spacing: 0.04em;
     line-height: 1.4;
     padding: 0.2rem 0.5rem;
-    border-radius: 4px;
+    border-radius: 50rem;
     cursor: pointer;
     text-decoration: none;
     vertical-align: middle;
@@ -741,4 +721,100 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 .page-id-badge:focus-visible {
     text-decoration: none;
     filter: brightness(1.12);
+}
+
+/* ---- Shared three-column footer --------------------------------------- */
+/* Every page renders _footer.html: name on the left, settings (languages and
+   database status) in the middle, the page-info and version badges on the
+   right. */
+.app-footer {
+    flex-shrink: 0;
+    font-size: 0.8rem;
+}
+
+.app-footer .app-footer-name {
+    color: #1a237e;
+    font-weight: 600;
+}
+
+.app-footer .app-footer-social a {
+    font-size: 0.9rem;
+}
+
+.app-footer .app-footer-legal {
+    font-size: 0.7rem;
+    line-height: 1.3;
+}
+
+.app-footer .app-footer-setting-label {
+    white-space: nowrap;
+}
+
+.app-footer .language-selector .btn {
+    min-width: 42px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.72rem;
+    line-height: 1.3;
+}
+
+.app-footer .page-id-badge,
+.app-footer .version-badge {
+    font-family: inherit;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.7rem;
+    line-height: 1.3;
+}
+
+/* Database status pill: grey while checking, green / red afterwards. */
+.db-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.db-status-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #adb5bd;
+    flex-shrink: 0;
+}
+
+.db-status-badge.db-ok {
+    color: #1e7e34;
+    border-color: #28a745 !important;
+}
+
+.db-status-badge.db-ok .db-status-dot {
+    background: #28a745;
+}
+
+.db-status-badge.db-err {
+    color: #b02a37;
+    border-color: #dc3545 !important;
+}
+
+.db-status-badge.db-err .db-status-dot {
+    background: #dc3545;
+}
+
+/* The auth screen keeps its card centred above the shared footer. */
+.auth-page .login-container {
+    min-height: 0;
+    flex: 1 1 auto;
+}
+
+@media (max-width: 767.98px) {
+    .app-footer .row > [class*="col-"] {
+        text-align: center !important;
+    }
+
+    .app-footer .page-id-badge,
+    .app-footer .version-badge {
+        padding: 0.3rem 0.6rem;
+    }
 }

@@ -90,38 +90,7 @@
         <main class="flex-grow-1 p-4">
             {% block content %}{% endblock %}
         </main>
-        <footer class="footer bg-light py-3 border-top">
-            <div class="container-fluid">
-                <div class="row align-items-center text-muted small">
-                    <div class="col text-start">
-                        &copy; 2026 {{ company.company_name if company else _('app_name') }}
-                    </div>
-                    <div class="col text-center">
-                        {% if company and company.social_links %}
-                        {% for platform, url in company.social_links.items() if url %}
-                        <a href="{{ url }}" target="_blank" class="text-muted me-2" rel="noopener">
-                            <i class="bi bi-{{ platform }}"></i>
-                        </a>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="col text-end">
-                        {% if page_info %}
-                        <button type="button" class="page-id-badge badge text-bg-primary me-2"
-                                data-bs-toggle="modal" data-bs-target="#pageInfoModal"
-                                title="Page information: {{ page_info.title }}">{{ page_info.id }}</button>
-                        {% endif %}
-                        {% if company and company.ice %}
-                        <span class="me-2">{{ _('ice') }}: {{ company.ice }}</span>
-                        {% endif %}
-                        {% if company and company.tax_id %}
-                        <span class="me-2">{{ _('tax_id') }}: {{ company.tax_id }}</span>
-                        {% endif %}
-                        <span class="version-badge badge text-bg-light border" title="Version">v{{ version }}</span>
-                    </div>
-                </div>
-            </div>
-        </footer>
+        {% include "_footer.html" %}
     </div>
 </div>
 

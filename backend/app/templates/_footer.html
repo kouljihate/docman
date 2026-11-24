@@ -1,0 +1,87 @@
+{# Shared application footer, rendered on every page (dashboard and auth).
+
+   Three fixed columns:
+     1. left   — application / company name (plus legal ids and social links)
+     2. middle — settings: language switcher and database status
+     3. right  — two rounded badges: page information and app version
+#}
+<footer class="footer app-footer bg-light border-top py-2">
+    <div class="container-fluid px-3 px-lg-4">
+        <div class="row g-2 align-items-center small">
+
+            <!-- 1 · left: application name -->
+            <div class="col-12 col-md-4 text-start">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-start gap-2">
+                    <span class="app-footer-name">
+                        {% if company and company.logo %}
+                        <img src="{{ company.logo }}" alt="" style="height:18px;width:18px;object-fit:contain;" class="me-1" onerror="this.style.display='none'">
+                        {% else %}
+                        <i class="bi bi-building-gear me-1"></i>
+                        {% endif %}
+                        {{ company.company_name if company else _('app_name') }}
+                    </span>
+                    {% if company and company.social_links %}
+                    <span class="app-footer-social d-inline-flex align-items-center gap-1">
+                        {% for platform, url in company.social_links.items() if url %}
+                        <a href="{{ url }}" target="_blank" class="text-muted" rel="noopener"
+                           title="{{ platform|capitalize }}">
+                            <i class="bi bi-{{ platform }}"></i>
+                        </a>
+                        {% endfor %}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if company and (company.ice or company.tax_id) %}
+                <div class="app-footer-legal text-muted mt-1">
+                    {% if company.ice %}<span class="me-2">{{ _('ice') }}: {{ company.ice }}</span>{% endif %}
+                    {% if company.tax_id %}<span>{{ _('tax_id') }}: {{ company.tax_id }}</span>{% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 2 · middle: settings → languages, database status -->
+            <div class="col-12 col-md-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-center gap-2">
+                    <span class="text-muted app-footer-setting-label">
+                        <i class="bi bi-gear me-1"></i>{{ _('settings') }}:
+                    </span>
+                    <div class="btn-group btn-group-sm language-selector" role="group"
+                         aria-label="{{ _('select_language') }}">
+                        {% for code, label in [('en', 'EN'), ('ar', 'عربي'), ('fr', 'FR')] %}
+                        <a href="{{ url_for('set_language', lang=code, next=footer_next) }}"
+                           class="btn btn-outline-secondary {{ 'active btn-primary text-white' if lang == code }}"
+                           title="{{ _('select_language') }}">{{ label }}</a>
+                        {% endfor %}
+                    </div>
+                    <span id="db-status" class="badge rounded-pill text-bg-light border db-status-badge"
+                          title="{{ _('database_checking') }}" aria-label="{{ _('database_status') }}">
+                        <span class="db-status-dot"></span>
+                        <span class="db-status-label">{{ _('database_checking') }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- 3 · right: page information + version badges -->
+            <div class="col-12 col-md-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-2">
+                    {% if page_info %}
+                    <button type="button" class="badge rounded-pill text-bg-primary border-0 page-id-badge"
+                            data-bs-toggle="modal" data-bs-target="#pageInfoModal"
+                            title="Page information: {{ page_info.title }} ({{ page_info.route }})">
+                        <i class="bi bi-info-circle me-1"></i>{{ _('page_information') }} · {{ page_info.id }}
+                    </button>
+                    {% else %}
+                    <span class="badge rounded-pill text-bg-light border page-id-badge"
+                          title="This route has no catalogue entry">
+                        <i class="bi bi-info-circle me-1"></i>{{ _('page_information') }}
+                    </span>
+                    {% endif %}
+                    <span class="badge rounded-pill text-bg-light border version-badge" title="Version">
+                        <i class="bi bi-tag me-1"></i>v{{ version }}
+                    </span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</footer>

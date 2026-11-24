@@ -77,3 +77,22 @@ def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_co
     assert "page-id-badge" in body
     assert 'id="pageInfoModal"' in body
     assert 'id="taskEditModal"' in body
+
+    # The shared three-column footer: name, settings, two badges.
+    assert 'class="footer app-footer' in body
+    assert 'id="db-status"' in body
+    assert "set-language" in body
+    assert "Page Information" in body
+    assert "version-badge" in body
+
+
+def test_language_switch_remembers_the_choice_and_returns_to_the_page(client):
+    response = client.get("/set-language?lang=fr&next=/tasks?status=open")
+
+    assert response.status_code == 302
+    assert response.headers["Location"].endswith("/tasks?status=open")
+    assert "lang=fr" in response.headers["Set-Cookie"]
+
+    # An absolute or scheme-relative next target is never trusted.
+    response = client.get("/set-language?lang=ar&next=//evil.example")
+    assert response.headers["Location"].endswith("/dashboard")
