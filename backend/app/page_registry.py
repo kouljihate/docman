@@ -157,7 +157,7 @@ PAGES = {
         "features": [
             "Sign-in form (username + password)",
             "Redirect back to the page that required a login",
-            "Shared footer: app name, settings icon (language dialog) and tri-state database status icon, Page Information and version badges",
+            "Shared footer: app name, settings icon (language dialog) and tri-state database status icon, page id and version badges",
             "Link to the registration page",
         ],
         "modals": [],
@@ -175,7 +175,7 @@ PAGES = {
             "Full name, username, email, phone and password form",
             "Company picker fed by /api/companies/public",
             "Bootstrap of the first main admin account",
-            "Shared footer: app name, settings icon, database status icon, Page Information and version badges",
+            "Shared footer: app name, settings icon, database status icon, page id and version badges",
         ],
         "modals": [],
         "apis": [

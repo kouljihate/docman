@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.14.1] - 2026-11-24
+
+### Changed
+- The right-hand page badge of the shared footer now shows only the page id
+  (for example `PG-LOGIN`, `PG-TASKS`); the `Page Information` label was
+  removed on every page. The badge still opens the page-info dialog.
+
 ## [3.14.0] - 2026-11-24
 
 ### Changed

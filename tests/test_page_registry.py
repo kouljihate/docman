@@ -97,7 +97,9 @@ def test_footer_badge_renders_the_page_id(client, make_token, make_user, make_co
     assert "bi bi-database-fill" in body
     assert "set-language" in body
     assert 'name="lang"' in body
-    assert "Page Information" in body
+    # The badge is the page id alone; the old "Page Information" label is gone.
+    assert ">PG-TASKS<" in body
+    assert "Page Information" not in body
     assert "version-badge" in body
 
 

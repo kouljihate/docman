@@ -4,7 +4,7 @@
      1. left   — application / company name (plus legal ids and social links)
      2. middle — two icons: settings (opens the language dialog) and the live
                  database status icon (green / orange / red)
-     3. right  — two rounded badges: page information and app version
+     3. right  — two rounded badges: page id (opens the page dialog) and app version
 #}
 <footer class="footer app-footer bg-light border-top py-2">
     <div class="container-fluid px-3 px-lg-4">
@@ -56,19 +56,19 @@
                 </div>
             </div>
 
-            <!-- 3 · right: page information + version badges -->
+            <!-- 3 · right: page id + version badges -->
             <div class="col-12 col-md-4">
                 <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-end gap-2">
                     {% if page_info %}
                     <button type="button" class="badge rounded-pill text-bg-primary border-0 page-id-badge"
                             data-bs-toggle="modal" data-bs-target="#pageInfoModal"
                             title="Page information: {{ page_info.title }} ({{ page_info.route }})">
-                        <i class="bi bi-info-circle me-1"></i>{{ _('page_information') }} · {{ page_info.id }}
+                        <i class="bi bi-info-circle me-1"></i>{{ page_info.id }}
                     </button>
                     {% else %}
                     <span class="badge rounded-pill text-bg-light border page-id-badge"
                           title="This route has no catalogue entry">
-                        <i class="bi bi-info-circle me-1"></i>{{ _('page_information') }}
+                        <i class="bi bi-info-circle me-1"></i>&mdash;
                     </span>
                     {% endif %}
                     <span class="badge rounded-pill text-bg-light border version-badge" title="Version">
