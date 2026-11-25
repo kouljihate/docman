@@ -1,20 +1,45 @@
-from seed_companies import build_companies
+from seed_companies import COMPANY_NAMES, DEFAULT_PASSWORD, build_companies
 
 
-def test_build_companies_makes_unique_valid_tenants():
-    companies = build_companies(100)
+def test_build_companies_uses_unique_realistic_names():
+    tenants = build_companies(100)
 
-    assert len(companies) == 100
-    assert len({c["company_name"] for c in companies}) == 100
-    assert companies[0]["company_name"] == "Test Company 001"
-    assert companies[-1]["company_name"] == "Test Company 100"
-    assert len({c["ice"] for c in companies}) == 100
-    assert all(len(c["ice"]) == 15 and c["ice"].isdigit() for c in companies)
-    assert all(c["is_active"] is True for c in companies)
-    assert all(c["email"] and c["code"] for c in companies)
+    names = [tenant["company"]["company_name"] for tenant in tenants]
+    assert names == list(COMPANY_NAMES[:100])
+    assert len(set(names)) == 100
+    assert not any("Test Company" in name or name.endswith((" 001", " 100")) for name in names)
+
+    slugs = [tenant["company"]["code"] for tenant in tenants]
+    websites = [tenant["company"]["website"] for tenant in tenants]
+    assert len(set(slugs)) == 100
+    assert len(set(websites)) == 100
+
+    ices = [tenant["company"]["ice"] for tenant in tenants]
+    assert len(set(ices)) == 100
+    assert all(len(ice) == 15 and ice.isdigit() for ice in ices)
+    assert all(tenant["company"]["city"] for tenant in tenants)
 
 
-def test_build_companies_accepts_prefix_and_count():
-    companies = build_companies(3, prefix="Demo")
+def test_build_companies_creates_a_unique_local_admin_each():
+    tenants = build_companies(100)
 
-    assert [c["company_name"] for c in companies] == ["Demo 001", "Demo 002", "Demo 003"]
+    usernames = [tenant["admin"]["username"] for tenant in tenants]
+    emails = [tenant["admin"]["email"] for tenant in tenants]
+    assert len(set(usernames)) == 100
+    assert len(set(emails)) == 100
+    # Compound first names such as "Fatima Zahra" are allowed.
+    assert all(len(tenant["admin"]["full_name"].split()) >= 2 for tenant in tenants)
+    assert all(tenant["admin"]["username"] == tenant["admin"]["username"].lower() for tenant in tenants)
+    for tenant in tenants:
+        assert tenant["admin"]["email"].startswith(tenant["admin"]["username"] + "@")
+        assert tenant["admin"]["email"].endswith(".ma")
+    assert DEFAULT_PASSWORD == "looklook"
+
+
+def test_build_companies_matches_named_cities():
+    tenants = {t["company"]["company_name"]: t["company"] for t in build_companies(100)}
+
+    assert tenants["Fès Bâtiment"]["city"] == "Fès"
+    assert tenants["Marrakech Habitat"]["city"] == "Marrakech"
+    assert tenants["Transport Marrakech Express"]["city"] == "Marrakech"
+    assert tenants["Coton Casa"]["city"] == "Casablanca"

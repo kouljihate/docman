@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.19.0] - 2026-11-25
+
+### Added
+- **`seed_companies.py` creates realistic demo tenants**: 100 curated Moroccan
+  company names (logistics, BTP, IT, accounting, agro-food, textile, real
+  estate, medical, tourism, …) with matching legal information, address, city,
+  region, postal code, contact e-mail and website (slug-based `.ma` domain, so
+  every company is unique). Companies named after a city are based there.
+- Each seeded company gets a **local admin** with a Moroccan full name, a unique
+  `initial.lastname` username, its own e-mail and the default password
+  `looklook` (one bcrypt hash is reused: the password is the same by design).
+  `--delete` removes the seeded companies and their documents.
+
 ## [3.18.0] - 2026-11-25
 
 ### Changed
