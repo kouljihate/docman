@@ -1,3 +1,6 @@
+import base64
+from xml.etree import ElementTree
+
 from seed_companies import COMPANY_NAMES, DEFAULT_PASSWORD, build_companies
 
 
@@ -34,6 +37,21 @@ def test_build_companies_creates_a_unique_local_admin_each():
         assert tenant["admin"]["email"].startswith(tenant["admin"]["username"] + "@")
         assert tenant["admin"]["email"].endswith(".ma")
     assert DEFAULT_PASSWORD == "looklook"
+
+
+def test_build_companies_have_a_valid_branded_logo():
+    tenants = build_companies(100)
+
+    logos = [tenant["company"]["logo"] for tenant in tenants]
+    assert all(logo.startswith("data:image/svg+xml;base64,") for logo in logos)
+    assert len({logo for logo in logos}) > 50
+    assert all(len(logo) < 900_000 for logo in logos)  # MAX_LOGO_LENGTH
+    for logo, tenant in zip(logos, tenants):
+        svg = base64.b64decode(logo.split(",", 1)[1]).decode("utf-8")
+        root = ElementTree.fromstring(svg)  # well-formed SVG
+        text = root.find("{http://www.w3.org/2000/svg}text")
+        assert text is not None and text.text.strip()
+        assert len(text.text.strip()) == 2
 
 
 def test_build_companies_matches_named_cities():

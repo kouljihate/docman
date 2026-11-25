@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.19.1] - 2026-11-25
+
+### Fixed
+- **Seeded companies now get a logo**: each demo tenant receives a branded SVG
+  monogram data URL (initials of the two meaningful name words, Moroccan
+  palette), so the header, footer and companies table show a logo instead of the
+  placeholder icon. `seed_companies.py` stores it in the `logo` field.
+
 ## [3.19.0] - 2026-11-25
 
 ### Added

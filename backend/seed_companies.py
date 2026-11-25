@@ -17,6 +17,8 @@ re-running is safe.
 ``company_id``.
 """
 import argparse
+import base64
+import re
 import sys
 import unicodedata
 from datetime import datetime, timezone
@@ -257,6 +259,31 @@ LEGAL_FORMS = (
 
 CAPITALS = ("100 000 MAD", "250 000 MAD", "500 000 MAD", "1 000 000 MAD")
 
+LOGO_PALETTE = (
+    ("#C1440E", "#E8A33D"),
+    ("#1B4B8A", "#3C8DBC"),
+    ("#0F6E5C", "#46B295"),
+    ("#6B2D5B", "#B25E9C"),
+    ("#2F4F2F", "#7BA05B"),
+    ("#8C2F39", "#D9838B"),
+    ("#2B2D42", "#8D99AE"),
+    ("#A15C00", "#F2B33D"),
+)
+
+LOGO_STOPWORDS = {
+    "et",
+    "de",
+    "du",
+    "des",
+    "la",
+    "le",
+    "les",
+    "au",
+    "aux",
+    "el",
+    "al",
+}
+
 STREETS = (
     "Boulevard Mohammed V",
     "Avenue Hassan II",
@@ -311,6 +338,38 @@ def _slug(value):
     return "-".join(cleaned.split())
 
 
+def _logo_initials(name):
+    """Two meaningful initials, skipping connectors such as "de" or "Al"."""
+    words = [
+        word
+        for word in re.split(r"[\s\-]+", _ascii(name))
+        if word.isalpha() and word.lower() not in LOGO_STOPWORDS
+    ]
+    if not words:
+        return _ascii(name)[:2].upper()
+    if len(words) == 1:
+        return words[0][:2].upper()
+    return (words[0][0] + words[1][0]).upper()
+
+
+def _logo_data_url(name, index):
+    """A small, self-contained SVG monogram used as the company logo."""
+    primary, accent = LOGO_PALETTE[index % len(LOGO_PALETTE)]
+    initials = _logo_initials(name)
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" '
+        'viewBox="0 0 128 128">'
+        f'<rect width="128" height="128" rx="28" fill="{primary}"/>'
+        f'<circle cx="104" cy="22" r="42" fill="{accent}" opacity="0.35"/>'
+        '<text x="64" y="66" fill="#FFFFFF" font-family="Helvetica,Arial,sans-serif" '
+        'font-size="52" font-weight="700" text-anchor="middle" '
+        f'dominant-baseline="middle" letter-spacing="1">{initials}</text>'
+        '</svg>'
+    )
+    encoded = base64.b64encode(svg.encode("utf-8")).decode("ascii")
+    return f"data:image/svg+xml;base64,{encoded}"
+
+
 def _location(name, index):
     for hint, city in CITY_HINTS:
         if hint in name:
@@ -361,7 +420,7 @@ def build_companies(count=DEFAULT_COUNT, created_by=None, now=None):
             "company_name": name,
             "code": slug.upper(),
             "slogan": "",
-            "logo": None,
+            "logo": _logo_data_url(name, index),
             "legal_form": LEGAL_FORMS[index % len(LEGAL_FORMS)],
             # 15 digits, unique per company.
             "ice": f"{150_000_000_000_000 + index + 1}",
