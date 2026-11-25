@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.20.0] - 2026-11-25
+
+### Added
+- **PG-AUDIT card header with a Clean button**: the audit trail card now has a
+  header whose right side holds a *Clean* button. It asks for confirmation, then
+  calls the new `DELETE /api/audit/logs` endpoint (main administrator only) to
+  delete the platform-wide audit entries and refreshes the table.
+
 ## [3.19.2] - 2026-11-25
 
 ### Fixed

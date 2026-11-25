@@ -11,6 +11,12 @@
 </div>
 
 <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-list-ul me-2"></i>{{ _('audit_logs') }}</span>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="cleanAudit()">
+            <i class="bi bi-trash me-1"></i>{{ _('clean_audit') }}
+        </button>
+    </div>
     <div class="card-body">
         <div class="mb-3">
             <div id="filterCheckboxes" class="d-flex flex-wrap gap-3 align-items-center">
@@ -58,6 +64,15 @@
 {% block extra_scripts %}
 <script>
 loadAudit();
+
+async function cleanAudit() {
+    if (!confirm({{ _('clean_audit_confirm')|tojson }})) return;
+    const data = await apiRequest('/audit/logs', { method: 'DELETE' });
+    if (data && typeof data.deleted === 'number') {
+        showToast({{ _('audit_cleaned')|tojson }});
+        loadAudit();
+    }
+}
 
 async function loadAudit() {
     const all = [...document.querySelectorAll('#filterCheckboxes input[type=checkbox]')];

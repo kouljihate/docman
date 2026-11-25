@@ -33,3 +33,14 @@ def get_logs():
     )
 
     return jsonify({"total": total, "logs": [AuditLogResponse(**log).model_dump(by_alias=True) for log in logs]}), 200
+
+
+@audit_bp.route("/logs", methods=["DELETE"])
+@jwt_required()
+@main_admin_required
+def clear_logs():
+    """Clean the platform-wide audit trail (main administrator only)."""
+    raw = request.args.get("entity_type", "")
+    entity_types = [t.strip() for t in raw.split(",") if t.strip()] if raw else None
+    deleted = AuditService.clear_logs(entity_types=entity_types, all_companies=True)
+    return jsonify({"deleted": deleted}), 200

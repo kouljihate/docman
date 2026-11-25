@@ -82,6 +82,20 @@ class AuditService:
         return list(db.audit_logs.aggregate(pipeline))
 
     @staticmethod
+    def clear_logs(
+        entity_types: Optional[list[str]] = None,
+        company_id=None,
+        all_companies: bool = False,
+    ) -> int:
+        db = get_db()
+        query = {}
+        if not all_companies and company_id is not None:
+            query["company_id"] = company_id
+        if entity_types:
+            query["entity_type"] = {"$in": entity_types}
+        return db.audit_logs.delete_many(query).deleted_count
+
+    @staticmethod
     def count_logs(
         entity_type: Optional[str] = None,
         entity_types: Optional[list[str]] = None,
