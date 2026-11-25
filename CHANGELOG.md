@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.19.2] - 2026-11-25
+
+### Fixed
+- **PG-LOGIN shows the error for wrong credentials**: the client dropped the
+  login endpoint's own `401` and redirected to `/login`, so the alert never
+  appeared. `apiRequest` now skips the session-expiry redirect for sign-in
+  (`skipAuthRedirect`), and the page displays the server message with the
+  localized "Invalid username or password" fallback, focusing the password
+  field.
+
 ## [3.19.1] - 2026-11-25
 
 ### Fixed

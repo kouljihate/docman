@@ -1,19 +1,22 @@
 const API_BASE = '/api';
 
 async function apiRequest(url, options = {}) {
-    const isFormData = options.body instanceof FormData;
+    const { skipAuthRedirect = false, ...fetchOptions } = options;
+    const isFormData = fetchOptions.body instanceof FormData;
     // The session token lives in an HttpOnly cookie, so no auth header is set.
     const headers = {
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-        ...options.headers,
+        ...fetchOptions.headers,
     };
 
     const res = await fetch(`${API_BASE}${url}`, {
-        ...options,
+        ...fetchOptions,
         headers,
     });
 
-    if (res.status === 401) {
+    // A failed sign-in answers 401 too: the login page shows that message, so it
+    // must not be mistaken for an expired session and swallowed by a redirect.
+    if (res.status === 401 && !skipAuthRedirect) {
         localStorage.removeItem('user');
         window.location.href = '/login';
         return;
@@ -30,6 +33,7 @@ async function login(username, password) {
     const data = await apiRequest('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
+        skipAuthRedirect: true,
     });
     if (data && data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));

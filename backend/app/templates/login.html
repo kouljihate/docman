@@ -12,7 +12,7 @@
         <label class="form-label">{{ _('password') }}</label>
         <input type="password" name="password" class="form-control" required>
     </div>
-    <div id="loginError" class="alert alert-danger d-none"></div>
+    <div id="loginError" class="alert alert-danger d-none" role="alert" aria-live="assertive"></div>
     <button type="submit" class="btn btn-cse w-100 btn-lg mb-3">
         <span id="loginBtnText">{{ _('sign_in') }}</span>
         <span id="loginBtnSpinner" class="spinner-border spinner-border-sm d-none"></span>
@@ -46,8 +46,12 @@ async function handleLogin(e) {
     if (data && data.user) {
         window.location.href = {{ next_url|tojson }} || '/dashboard';
     } else {
-        error.textContent = data.error || '{{ _('invalid_credentials') }}';
+        const message = (data && data.error) || '{{ _('invalid_credentials') }}';
+        error.textContent = message === 'Invalid credentials'
+            ? '{{ _('invalid_credentials') }}'
+            : message;
         error.classList.remove('d-none');
+        form.password.select();
     }
     return false;
 }
