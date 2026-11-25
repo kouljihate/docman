@@ -59,19 +59,46 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="cleanAuditModal" tabindex="-1" aria-labelledby="cleanAuditModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="cleanAuditForm" onsubmit="return submitCleanAudit(event)">
+                <div class="modal-header">
+                    <h5 class="modal-title text-danger" id="cleanAuditModalTitle">
+                        <i class="bi bi-exclamation-triangle me-2"></i>{{ _('clean_audit') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">{{ _('clean_audit_confirm') }}</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>{{ _('clean_audit') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
 loadAudit();
 
-async function cleanAudit() {
-    if (!confirm({{ _('clean_audit_confirm')|tojson }})) return;
+function cleanAudit() {
+    new bootstrap.Modal(document.getElementById('cleanAuditModal')).show();
+}
+
+async function submitCleanAudit(event) {
+    event.preventDefault();
     const data = await apiRequest('/audit/logs', { method: 'DELETE' });
+    bootstrap.Modal.getInstance(document.getElementById('cleanAuditModal')).hide();
     if (data && typeof data.deleted === 'number') {
         showToast({{ _('audit_cleaned')|tojson }});
         loadAudit();
     }
+    return false;
 }
 
 async function loadAudit() {

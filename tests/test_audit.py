@@ -52,3 +52,6 @@ def test_audit_page_has_clean_button_in_card_header(client, make_token, make_use
 
     assert "card-header d-flex justify-content-between align-items-center" in body
     assert "cleanAudit()" in body
+    assert 'id="cleanAuditModal"' in body
+    assert "submitCleanAudit(event)" in body
+    assert "confirm(" not in body

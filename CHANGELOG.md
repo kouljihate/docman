@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.20.1] - 2026-11-25
+
+### Changed
+- **PG-AUDIT confirmation uses an in-app modal**: the Clean button no longer
+  relies on the browser's `confirm()` prompt. It opens a Bootstrap modal with
+  the warning text and Cancel / Clean actions, so the confirmation matches the
+  rest of the UI and is localized.
+
 ## [3.20.0] - 2026-11-25
 
 ### Added
