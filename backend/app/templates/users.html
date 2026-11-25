@@ -155,7 +155,18 @@ loadUsers();
 if (IS_MAIN_ADMIN) loadCompanies();
 
 async function loadCompanies() {
-    companiesData = await apiRequest('/companies/') || [];
+    // The company list is paginated, so read every page for the filter and the
+    // company column.
+    companiesData = [];
+    let page = 1;
+    let pages = 1;
+    do {
+        const data = await apiRequest(`/companies/?page=${page}&per_page=200`);
+        if (!data || !Array.isArray(data.items)) break;
+        companiesData = companiesData.concat(data.items);
+        pages = data.pages;
+        page += 1;
+    } while (page <= pages);
     const select = document.getElementById('companySelect');
     if (select) {
         select.innerHTML = companiesData.map(c => `<option value="${c._id}">${c.company_name}</option>`).join('');

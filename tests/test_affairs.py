@@ -135,7 +135,8 @@ def test_platform_admin_lists_affairs_per_company(client, db, make_token, make_u
     filtered = client.get(f"/api/affairs/?company_id={acme['_id']}").get_json()
     assert {a["name"] for a in filtered} == {"Dossier A", "Dossier B"}
 
-    counts = {c["company_name"]: c["affairs_count"] for c in client.get("/api/companies/").get_json()}
+    companies = client.get("/api/companies/").get_json()["items"]
+    counts = {c["company_name"]: c["affairs_count"] for c in companies}
     assert counts == {"Acme": 2, "Other": 1}
 
     page = client.get(f"/affairs?company={acme['_id']}").get_data(as_text=True)

@@ -13,7 +13,7 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle" data-server-pagination>
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('company_name') }}</th>
@@ -32,6 +32,7 @@
                 </tbody>
             </table>
         </div>
+        <div id="companiesPager" class="table-pagination"></div>
     </div>
 </div>
 
@@ -191,18 +192,26 @@
 
 {% block extra_scripts %}
 <script>
-async function loadCompanies() {
+// The companies table is paged on the server: 102 tenants cost one page of
+// rows and one count aggregation instead of a query per row.
+const COMPANIES_PER_PAGE = 25;
+let companiesPage = 1;
+
+async function loadCompanies(page) {
+    if (page) companiesPage = page;
     const body = document.getElementById('companiesBody');
-    const data = await apiRequest('/companies/');
-    if (!Array.isArray(data)) {
+    const data = await apiRequest(`/companies/?page=${companiesPage}&per_page=${COMPANIES_PER_PAGE}`);
+    if (!data || !Array.isArray(data.items)) {
         body.innerHTML = `<tr><td colspan="9" class="text-center text-danger">${(data && data.error) || 'Error'}</td></tr>`;
         return;
     }
-    if (!data.length) {
+    companiesPage = data.page;
+    if (!data.items.length) {
         body.innerHTML = `<tr><td colspan="9" class="text-center text-muted">{{ _('no_companies') }}</td></tr>`;
+        renderCompaniesPager(data);
         return;
     }
-    body.innerHTML = data.map(c => `
+    body.innerHTML = data.items.map(c => `
         <tr>
             <td class="fw-semibold">
                 ${c.logo ? `<img src="${c.logo}" alt="" class="me-2 rounded" style="height:22px;width:22px;object-fit:contain" onerror="this.style.display='none'">` : ''}
@@ -233,6 +242,52 @@ async function loadCompanies() {
                 </button>
             </td>
         </tr>`).join('');
+    renderCompaniesPager(data);
+}
+
+function renderCompaniesPager(data) {
+    const bar = document.getElementById('companiesPager');
+    if (!bar) return;
+    if (!data.total) {
+        bar.innerHTML = '';
+        bar.style.display = 'none';
+        return;
+    }
+    const from = (data.page - 1) * data.per_page + 1;
+    const to = Math.min(data.total, data.page * data.per_page);
+    const info = paginationText('paginationInfo', 'Showing {start}–{end} of {total}')
+        .replace('{start}', from)
+        .replace('{end}', to)
+        .replace('{total}', data.total);
+    const numbers = paginationPageNumbers(data.page, data.pages).map((number) => {
+        if (number === '…') {
+            return '<li class="page-item disabled"><span class="page-link">…</span></li>';
+        }
+        return `<li class="page-item ${number === data.page ? 'active' : ''}">` +
+            `<button class="page-link" type="button" onclick="loadCompanies(${number})"` +
+            `${number === data.page ? ' aria-current="page"' : ''}>${number}</button></li>`;
+    }).join('');
+
+    bar.style.display = '';
+    bar.innerHTML = `
+        <div class="table-pagination-inner">
+            <small class="text-muted">${info}</small>
+            <nav aria-label="${paginationText('paginationLabel', 'Table pagination')}">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item ${data.page === 1 ? 'disabled' : ''}">
+                        <button class="page-link" type="button" onclick="loadCompanies(${data.page - 1})">
+                            ${paginationText('paginationPrev', 'Previous')}
+                        </button>
+                    </li>
+                    ${numbers}
+                    <li class="page-item ${data.page === data.pages ? 'disabled' : ''}">
+                        <button class="page-link" type="button" onclick="loadCompanies(${data.page + 1})">
+                            ${paginationText('paginationNext', 'Next')}
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>`;
 }
 
 // Company profile fields edited in the shared dialog.

@@ -89,7 +89,7 @@ def test_main_admin_can_create_and_list_companies(client, make_token, make_user)
     assert created.status_code == 201
     assert created.get_json()["company_name"] == "Gamma"
 
-    listed = client.get("/api/companies/").get_json()
+    listed = client.get("/api/companies/").get_json()["items"]
     assert [c["company_name"] for c in listed] == ["Gamma"]
 
 

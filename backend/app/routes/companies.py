@@ -1,4 +1,5 @@
 """Platform-level company management (main admin) and company lookup."""
+import re
 from datetime import datetime, timezone
 
 from bcrypt import gensalt, hashpw
@@ -15,6 +16,9 @@ from app.models.company import (
 )
 from app.services.audit_service import AuditService
 from app.tenancy import (
+    CUSTOMER,
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
     current_company_id,
     current_user_id,
     main_admin_required,
@@ -22,6 +26,9 @@ from app.tenancy import (
 )
 
 companies_bp = Blueprint("companies", __name__, url_prefix="/api/companies")
+
+DEFAULT_PER_PAGE = 25
+MAX_PER_PAGE = 200
 
 
 @companies_bp.route("/public", methods=["GET"])
@@ -32,36 +39,130 @@ def public_companies():
     return jsonify([{"_id": str(c["_id"]), "company_name": c.get("company_name", ""), "code": c.get("code", "")} for c in companies]), 200
 
 
-def _serialize(company, db):
+COUNT_KEYS = (
+    "admins_count",
+    "employees_count",
+    "customers_count",
+    "affairs_count",
+    "documents_count",
+    "tasks_count",
+)
+
+
+def _company_counts(db, company_ids):
+    """Per-company counters for many companies in a single aggregation.
+
+    The list page shows six counters per row; counting them one row at a time
+    costs six queries per company. Instead every requested tenant is looked up
+    once and the counters are computed server-side in one command.
+    """
+    ids = list(company_ids)
+    if not ids:
+        return {}
+
+    def users_with_role(role):
+        return {
+            "$size": {
+                "$filter": {
+                    "input": "$tenant_users",
+                    "as": "user",
+                    "cond": {"$eq": ["$$user.role", role]},
+                }
+            }
+        }
+
+    pipeline = [
+        {"$match": {"_id": {"$in": ids}}},
+        *[
+            {
+                "$lookup": {
+                    "from": collection,
+                    "localField": "_id",
+                    "foreignField": "company_id",
+                    "as": f"tenant_{collection}",
+                }
+            }
+            for collection in ("users", "affairs", "documents", "tasks")
+        ],
+        {
+            "$project": {
+                "admins_count": users_with_role(LOCAL_ADMIN),
+                "employees_count": users_with_role(LOCAL_EMPLOYEE),
+                "customers_count": users_with_role(CUSTOMER),
+                "affairs_count": {"$size": "$tenant_affairs"},
+                "documents_count": {"$size": "$tenant_documents"},
+                "tasks_count": {"$size": "$tenant_tasks"},
+            }
+        },
+    ]
+    return {doc["_id"]: doc for doc in db.companies.aggregate(pipeline)}
+
+
+def _counts_for(db, company_id):
+    return _company_counts(db, [company_id]).get(company_id, {})
+
+
+def _serialize(company, counts=None):
     data = CompanyResponse.from_mongo(company).model_dump(by_alias=True)
-    company_id = company["_id"]
-    data["admins_count"] = db.users.count_documents(
-        {"company_id": company_id, "role": "local_admin"}
-    )
-    data["employees_count"] = db.users.count_documents(
-        {"company_id": company_id, "role": "local_employee"}
-    )
-    data["customers_count"] = db.users.count_documents(
-        {"company_id": company_id, "role": "customer"}
-    )
-    # Each company owns many affairs; the list page links to them.
-    data["affairs_count"] = db.affairs.count_documents({"company_id": company_id})
-    data["documents_count"] = db.documents.count_documents({"company_id": company_id})
-    data["tasks_count"] = db.tasks.count_documents({"company_id": company_id})
+    counts = counts or {}
+    for key in COUNT_KEYS:
+        data[key] = counts.get(key, 0)
     return data
+
+
+def _positive_int_arg(name, default, maximum=None):
+    raw = request.args.get(name)
+    if raw in (None, ""):
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return default
+    if value < 1:
+        return default
+    return min(value, maximum) if maximum else value
 
 
 @companies_bp.route("/", methods=["GET"])
 @jwt_required()
 @main_admin_required
 def list_companies():
+    """One page of companies, with their counters, for the platform admin.
+
+    ``GET /api/companies/?page=2&per_page=25`` returns
+    ``{"items": [...], "page": 2, "per_page": 25, "total": 102, "pages": 5}``.
+    """
     db = get_db()
     search = request.args.get("q", "").strip()
+    page = _positive_int_arg("page", 1)
+    per_page = _positive_int_arg("per_page", DEFAULT_PER_PAGE, MAX_PER_PAGE)
     query = {}
     if search:
-        query["company_name"] = {"$regex": search, "$options": "i"}
-    companies = list(db.companies.find(query).sort("company_name", 1))
-    return jsonify([_serialize(c, db) for c in companies]), 200
+        query["company_name"] = {"$regex": re.escape(search), "$options": "i"}
+
+    total = db.companies.count_documents(query)
+    pages = max(1, (total + per_page - 1) // per_page)
+    # Deleting or filtering can leave the caller past the last page.
+    page = min(page, pages)
+    companies = list(
+        db.companies.find(query)
+        .sort("company_name", 1)
+        .skip((page - 1) * per_page)
+        .limit(per_page)
+    )
+    counts = _company_counts(db, [company["_id"] for company in companies])
+    return (
+        jsonify(
+            {
+                "items": [_serialize(c, counts.get(c["_id"])) for c in companies],
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "pages": pages,
+            }
+        ),
+        200,
+    )
 
 
 @companies_bp.route("/", methods=["POST"])
@@ -115,7 +216,7 @@ def create_company():
     )
 
     created = db.companies.find_one({"_id": company_id})
-    response = _serialize(created, db)
+    response = _serialize(created, _counts_for(db, company_id))
     if admin_created:
         response["admin"] = admin_created
     return jsonify(response), 201
@@ -141,7 +242,7 @@ def get_company(company_id):
     company = db.companies.find_one({"_id": ObjectId(company_id)})
     if not company:
         return jsonify({"error": "Company not found"}), 404
-    data = _serialize(company, db)
+    data = _serialize(company, _counts_for(db, company["_id"]))
     data["admins"] = [
         {"_id": str(u["_id"]), "username": u["username"], "email": u.get("email"), "full_name": u.get("full_name")}
         for u in db.users.find({"company_id": company["_id"], "role": "local_admin"}).sort("full_name", 1)
@@ -177,7 +278,7 @@ def update_company(company_id):
         description=f"Company '{company.get('company_name')}' updated",
         company_id=company["_id"],
     )
-    return jsonify(_serialize(db.companies.find_one({"_id": company["_id"]}), db)), 200
+    return jsonify(_serialize(db.companies.find_one({"_id": company["_id"]}), _counts_for(db, company["_id"]))), 200
 
 
 @companies_bp.route("/<company_id>/admins", methods=["POST"])

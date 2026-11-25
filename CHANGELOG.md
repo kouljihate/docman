@@ -4,6 +4,21 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.18.0] - 2026-11-25
+
+### Changed
+- **Companies page paginated** (25 rows per page): `GET /api/companies/` now
+  accepts `page`, `per_page` (max 200) and `q`, and returns
+  `{items, page, per_page, total, pages}`. The table renders a server-side pager
+  using the existing pagination styles, and the client-side table paginator
+  skips tables marked `data-server-pagination`. Search is escaped before it is
+  used as a regex.
+- **Company counters in one aggregation**: the six per-row counters (local
+  admins, employees, customers, affairs, documents, tasks) are now computed by a
+  single `$lookup` aggregation for the whole page instead of six
+  `count_documents` calls per company, so listing 100+ tenants no longer runs
+  hundreds of queries.
+
 ## [3.17.1] - 2026-11-24
 
 ### Added

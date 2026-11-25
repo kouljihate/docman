@@ -383,6 +383,8 @@ function renderTablePagination(table) {
 function paginateAllTables() {
     document.querySelectorAll('table').forEach((table) => {
         if (!table.tBodies.length) return;
+        // Tables paged by the server already show one page of rows.
+        if (table.hasAttribute('data-server-pagination')) return;
         renderTablePagination(table);
     });
 }
