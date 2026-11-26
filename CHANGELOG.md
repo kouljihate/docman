@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.4] - 2026-11-26
+
+### Changed
+- **Demo customers for every company**: each of the 102 companies now holds
+  between 20 and 50 customer accounts (3 471 in total), created with
+  `scripts/add_users.py --role customer --count 20-50`. Every customer is owned
+  by their company's local admin and uses the default password `looklook`.
+
 ## [3.21.3] - 2026-11-26
 
 ### Added
