@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.5] - 2026-11-26
+
+### Changed
+- **Demo tenant accounts cleared**: all 3 471 customers, 507 employees and 102
+  local admins were removed with `scripts/remove_users.py`, leaving only the
+  platform main admin. The customer cascade also left no affairs, activities,
+  documents or payments behind.
+
 ## [3.21.4] - 2026-11-26
 
 ### Changed
