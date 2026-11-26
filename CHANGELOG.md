@@ -4,6 +4,18 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.3] - 2026-11-26
+
+### Added
+- **`backend/scripts/`**: one operational script per user-management request,
+  runnable inside the stack. `add_users.py` creates accounts of a given role
+  (`local_employee`, `customer`, `local_admin`) for one company or all of them,
+  with a fixed count or a range such as `3-7`. `remove_users.py` removes the
+  accounts of a role, cascading a customer's affairs, activities,
+  notifications, documents and payments. Both preview with `--dry-run` and
+  apply with `--yes`, and share their name, username and cascade helpers in
+  `_common.py`.
+
 ## [3.21.2] - 2026-11-26
 
 ### Added
