@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.1] - 2026-11-26
+
+### Added
+- **`seed_employees.py`**: tops every company up to a deterministic 3-7
+  `local_employee` accounts (Moroccan names, unique usernames and e-mails,
+  default password `looklook`). Companies that already have enough employees
+  are skipped, so re-running is safe; `--dry-run` previews the plan.
+
 ## [3.21.0] - 2026-11-26
 
 ### Added
