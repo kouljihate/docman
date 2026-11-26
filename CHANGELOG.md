@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.2] - 2026-11-26
+
+### Added
+- **`delete_customers.py`**: removes every customer account together with its
+  cascaded data (affairs, the activities and notifications generated from them,
+  documents and payments), mirroring the per-customer delete endpoint.
+  `--dry-run` previews the counts; `--yes` applies the removal.
+
 ## [3.21.1] - 2026-11-26
 
 ### Added
