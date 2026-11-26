@@ -109,7 +109,13 @@ def load_db():
     ]
 
 
-def select_company(db, wanted):
+def select_companies(db, wanted):
+    """Return the list of companies to seed.
+
+    With ``wanted`` set, only the matching company is returned; otherwise every
+    company in the database is returned so the demo data stays consistent across
+    tenants (matching the behaviour of the other seed scripts).
+    """
     if wanted:
         query = {"$or": [{"company_name": wanted}, {"code": wanted}]}
         try:
@@ -119,11 +125,18 @@ def select_company(db, wanted):
         except Exception:
             pass
         company = db.companies.find_one(query)
-    else:
-        company = db.companies.find_one({"is_active": True}) or db.companies.find_one()
-    if not company:
-        sys.exit("No company found; create one first or pass --company.")
-    return company
+        if not company:
+            sys.exit(f"No company matched {wanted!r}.")
+        return [company]
+    companies = list(db.companies.find({}).sort("company_name", 1))
+    if not companies:
+        sys.exit("No companies found; create one first or pass --company.")
+    return companies
+
+
+def select_company(db, wanted):
+    companies = select_companies(db, wanted)
+    return companies[0] if wanted else companies[0]
 
 
 def main():
@@ -144,82 +157,91 @@ def main():
     from bson import ObjectId
 
     db = load_db()
-    company = select_company(db, args.company)
-    company_id = company["_id"]
-    print(f"Company: {company.get('company_name')} ({company_id})")
+    companies = select_companies(db, args.company)
+    print(f"Database : {db.name}")
+    print(f"Companies: {len(companies)}")
 
-    admin = db.users.find_one(
-        {"company_id": company_id, "role": "local_admin", "is_active": True},
-        sort=[("created_at", 1)],
-    )
-    created_by = admin["_id"] if admin else None
-    if admin:
-        print(f"Task author: {admin.get('username')} ({admin['_id']})")
-    else:
-        print("No local admin found; tasks will be stored without created_by.")
+    total_services_created = total_services_updated = 0
+    total_tasks_created = total_tasks_skipped = 0
 
-    existing_services = list(db.services.find({"company_id": company_id}))
-    by_name = {key(s.get("name")): s for s in existing_services}
-    now = datetime.now(timezone.utc)
+    for company in companies:
+        company_id = company["_id"]
+        label = company.get("company_name") or str(company_id)
 
-    services_created = services_updated = 0
-    tasks_created = tasks_skipped = 0
+        admin = db.users.find_one(
+            {"company_id": company_id, "role": "local_admin", "is_active": True},
+            sort=[("created_at", 1)],
+        )
+        created_by = admin["_id"] if admin else None
 
-    for service in SERVICES:
-        name = service["name"]
-        existing = by_name.get(key(name))
+        existing_services = list(db.services.find({"company_id": company_id}))
+        by_name = {key(s.get("name")): s for s in existing_services}
+        now = datetime.now(timezone.utc)
 
-        if existing:
-            service_id = existing["_id"]
+        services_created = services_updated = 0
+        tasks_created = tasks_skipped = 0
+
+        for service in SERVICES:
+            name = service["name"]
+            existing = by_name.get(key(name))
+
+            if existing:
+                service_id = existing["_id"]
+                db.services.update_one(
+                    {"_id": service_id},
+                    {"$set": {"name": name, "is_active": True, "company_id": company_id,
+                              "updated_at": now}},
+                )
+                services_updated += 1
+            else:
+                service_id = db.services.insert_one({
+                    "name": name,
+                    "description": None,
+                    "price": None,
+                    "is_active": True,
+                    "task_ids": [],
+                    "company_id": company_id,
+                    "created_at": now,
+                    "updated_at": now,
+                }).inserted_id
+                services_created += 1
+
+            task_ids = [t["_id"] for t in db.tasks.find(
+                {"company_id": company_id, "service_id": service_id}, {"_id": 1})]
+            known_titles = {key(t.get("title")) for t in db.tasks.find(
+                {"company_id": company_id, "service_id": service_id}, {"title": 1})}
+
+            for title in service["tasks"]:
+                if key(title) in known_titles:
+                    tasks_skipped += 1
+                    continue
+                task_id = db.tasks.insert_one({
+                    "title": title,
+                    "description": None,
+                    "status": "pending",
+                    "service_id": service_id,
+                    "company_id": company_id,
+                    "created_by": created_by,
+                    "created_at": now,
+                    "updated_at": now,
+                }).inserted_id
+                task_ids.append(task_id)
+                known_titles.add(key(title))
+                tasks_created += 1
+
             db.services.update_one(
                 {"_id": service_id},
-                {"$set": {"name": name, "is_active": True, "company_id": company_id,
-                          "updated_at": now}},
+                {"$set": {"task_ids": task_ids, "updated_at": now}},
             )
-            services_updated += 1
-        else:
-            service_id = db.services.insert_one({
-                "name": name,
-                "description": None,
-                "price": None,
-                "is_active": True,
-                "task_ids": [],
-                "company_id": company_id,
-                "created_at": now,
-                "updated_at": now,
-            }).inserted_id
-            services_created += 1
 
-        task_ids = [t["_id"] for t in db.tasks.find(
-            {"company_id": company_id, "service_id": service_id}, {"_id": 1})]
-        known_titles = {key(t.get("title")) for t in db.tasks.find(
-            {"company_id": company_id, "service_id": service_id}, {"title": 1})}
+        total_services_created += services_created
+        total_services_updated += services_updated
+        total_tasks_created += tasks_created
+        total_tasks_skipped += tasks_skipped
+        print(f"  {label}: services +{services_created}/~{services_updated}, tasks +{tasks_created}/~{tasks_skipped}")
 
-        for title in service["tasks"]:
-            if key(title) in known_titles:
-                tasks_skipped += 1
-                continue
-            task_id = db.tasks.insert_one({
-                "title": title,
-                "description": None,
-                "status": "pending",
-                "service_id": service_id,
-                "company_id": company_id,
-                "created_by": created_by,
-                "created_at": now,
-                "updated_at": now,
-            }).inserted_id
-            task_ids.append(task_id)
-            known_titles.add(key(title))
-            tasks_created += 1
-
-        db.services.update_one(
-            {"_id": service_id},
-            {"$set": {"task_ids": task_ids, "updated_at": now}},
-        )
-
-    print(f"Services: {services_created} created, {services_updated} updated.")
-    print(f"Tasks: {tasks_created} created, {tasks_skipped} already present.")
+    print(f"\nTotals — Services: {total_services_created} created, {total_services_updated} updated.")
+    print(f"Totals — Tasks: {total_tasks_created} created, {total_tasks_skipped} already present.")
 
 
 if __name__ == "__main__":
