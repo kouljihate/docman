@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.6] - 2026-11-26
+
+### Changed
+- **One local administrator per company**: every one of the 102 companies got
+  a single `local_admin` account through
+  `scripts/add_users.py --role local_admin --count 1`, with the default password
+  `looklook`.
+
 ## [3.21.5] - 2026-11-26
 
 ### Changed
