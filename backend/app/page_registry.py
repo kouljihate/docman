@@ -329,10 +329,11 @@ PAGES = {
         "layout": "dashboard",
         "template": "affairs.html",
         "roles": ["main_admin", "local_admin"],
-        "summary": "Affairs per company, each with a readable reference (A + YYMMDD-HHMM), its customer, services, assignee and generated activity counters. A local admin sees their own company; the platform admin sees every company, read-only and filterable with ?company=<id>.",
+        "summary": "Affairs per company, each with a readable reference (A + YYMMDD-HHMM), its customer, services, assignee and generated activity counters. A local admin sees their own company; the platform admin sees every company, filterable with ?company=<id>, and can edit or delete any row.",
         "features": [
             "Affair table with reference, flanked by the company column on the platform admin's view",
-            "Read-only platform view across all companies, filterable per company",
+            "Circular edit and delete buttons per row, for the local admin and for every company's rows on the platform view",
+            "Platform view across all companies, filterable per company",
             "Create / edit affair dialog (services, assignee)",
             "Automatic activity generation per attached service",
         ],

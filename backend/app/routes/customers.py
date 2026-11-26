@@ -10,10 +10,12 @@ from app.models.user import UserCreate, UserResponse
 from app.services.audit_service import AuditService
 from app.tenancy import (
     CUSTOMER,
+    admin_required,
     company_scope,
     current_company_id,
     current_user_id,
     is_customer,
+    is_main_admin,
     local_admin_required,
     to_object_id,
 )
@@ -29,10 +31,18 @@ def _customer_query(extra=None):
 
 @customers_bp.route("/", methods=["GET"])
 @jwt_required()
-@local_admin_required
+@admin_required
 def list_customers():
     db = get_db()
-    customers = list(db.users.find(_customer_query()).sort("full_name", 1))
+    extra = None
+    if is_main_admin():
+        # The platform admin picks a tenant explicitly; there is no "all
+        # customers" view, so the company is required.
+        company_id = to_object_id(request.args.get("company_id"))
+        if company_id is None:
+            return jsonify({"error": "company_id is required"}), 400
+        extra = {"company_id": company_id}
+    customers = list(db.users.find(_customer_query(extra)).sort("full_name", 1))
 
     result = []
     for customer in customers:

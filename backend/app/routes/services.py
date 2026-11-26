@@ -8,11 +8,16 @@ from app.database import get_db
 from app.models.service import ServiceCreate, ServiceResponse, ServiceUpdate
 from app.services.audit_service import AuditService
 from app.tenancy import (
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
+    MAIN_ADMIN,
     company_scope,
     current_company_id,
     current_user_id,
+    is_main_admin,
     local_admin_required,
     local_staff_required,
+    role_required,
     to_object_id,
 )
 
@@ -113,10 +118,17 @@ def create_service():
 
 @services_bp.route("/", methods=["GET"])
 @jwt_required()
-@local_staff_required
+@role_required(MAIN_ADMIN, LOCAL_ADMIN, LOCAL_EMPLOYEE)
 def list_services():
     db = get_db()
-    services = list(db.services.find(company_scope()).sort("name", 1))
+    query = company_scope()
+    if is_main_admin():
+        # The platform admin reads one company's catalogue at a time.
+        company_id = to_object_id(request.args.get("company_id"))
+        if company_id is None:
+            return jsonify({"error": "company_id is required"}), 400
+        query["company_id"] = company_id
+    services = list(db.services.find(query).sort("name", 1))
     return jsonify([ServiceResponse(**s).model_dump(by_alias=True) for s in services]), 200
 
 

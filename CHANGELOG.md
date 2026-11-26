@@ -4,6 +4,15 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.0] - 2026-11-26
+
+### Added
+- **PG-AFFAIRS edit and delete buttons on the platform view**: every row of the
+  platform administrator's affairs table now has circular *Edit* and *Delete*
+  buttons in the Actions column, in addition to the local admin's own view. The
+  edit dialog loads its customers, services and assignees from the affair's own
+  company, so the platform admin never sees another tenant's catalogue.
+
 ## [3.20.1] - 2026-11-25
 
 ### Changed

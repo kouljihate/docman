@@ -132,14 +132,22 @@ const isMainAdmin = {{ 'true' if user_role == 'main_admin' else 'false' }};
 const companyFilter = {{ (request.args.get('company') or '')|tojson }};
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (isMainAdmin) {
-        loadAffairs();
-        return;
+    // The platform admin has no company of its own, so its dialog choices are
+    // loaded per affair from the affair's company (see editAffair).
+    if (!isMainAdmin) {
+        await loadAffairOptions();
+        renderAssigneeOptions('');
     }
+
+    loadAffairs();
+});
+
+async function loadAffairOptions(companyId) {
+    const query = companyId ? `?company_id=${encodeURIComponent(companyId)}` : '';
     const [customers, services, assignees] = await Promise.all([
-        apiRequest('/customers/'),
-        apiRequest('/services/'),
-        apiRequest('/users/assignees'),
+        apiRequest('/customers/' + query),
+        apiRequest('/services/' + query),
+        apiRequest('/users/assignees' + query),
     ]);
 
     if (Array.isArray(customers)) {
@@ -149,10 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     affairServices = Array.isArray(services) ? services : [];
     affairAssignees = Array.isArray(assignees) ? assignees : [];
-    renderAssigneeOptions('');
-
-    loadAffairs();
-});
+}
 
 function renderAssigneeOptions(selected) {
     const sel = document.getElementById('affairAssigneeSelect');
@@ -205,10 +210,13 @@ async function loadAffairs() {
         const companyCell = isMainAdmin
             ? `<td>${a.company_name || '-'}</td>`
             : '';
-        const actions = isMainAdmin ? '' : `
+        // Generating activities is a local-admin action; the platform admin
+        // still gets edit and delete on every company's rows.
+        const generateButton = isMainAdmin ? '' : `
                 <button class="btn btn-sm btn-outline-info" onclick="generateActivities('${a._id}')" title="{{ _('generate_activities') }}">
                     <i class="bi bi-magic"></i>
-                </button>
+                </button>`;
+        const actions = `${generateButton}
                 <button class="btn btn-sm btn-outline-primary" onclick="editAffair('${a._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -247,6 +255,9 @@ function openCreateModal() {
 async function editAffair(id) {
     const data = await apiRequest(`/affairs/${id}`);
     if (!data || !data._id) return;
+    if (isMainAdmin) {
+        await loadAffairOptions(data.company_id);
+    }
     editingAffairId = id;
     document.getElementById('affairModalTitle').textContent = '{{ _('edit_affair') }}';
     document.getElementById('editAffairId').value = id;

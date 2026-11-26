@@ -12,6 +12,7 @@ from app.tenancy import (
     CUSTOMER,
     LOCAL_ADMIN,
     LOCAL_EMPLOYEE,
+    admin_required,
     company_scope,
     current_company_id,
     current_user_id,
@@ -30,10 +31,12 @@ affairs_bp = Blueprint("affairs", __name__, url_prefix="/api/affairs")
 ASSIGNABLE_ROLES = (LOCAL_ADMIN, LOCAL_EMPLOYEE)
 
 
-def _services_for(db, service_ids):
+def _services_for(db, service_ids, company_id=None):
     """Return the company's service documents for `service_ids`.
 
     `None` means one of the ids is invalid or belongs to another company.
+    `company_id` pins the tenant explicitly for the platform admin, who is not
+    tied to a company.
     """
     ids = []
     for sid in service_ids or []:
@@ -43,7 +46,12 @@ def _services_for(db, service_ids):
         ids.append(oid)
     if not ids:
         return []
-    services = list(db.services.find(company_scope({"_id": {"$in": ids}})))
+    query = {"_id": {"$in": ids}}
+    if company_id:
+        query["company_id"] = company_id
+        services = list(db.services.find(query))
+    else:
+        services = list(db.services.find(company_scope(query)))
     if len({s["_id"] for s in services}) != len(set(ids)):
         return None
     order = {sid: index for index, sid in enumerate(ids)}
@@ -51,13 +59,13 @@ def _services_for(db, service_ids):
     return services
 
 
-def _assignee_for(db, user_id):
-    """Return a local admin or employee of the caller's company, or None."""
-    return db.users.find_one(
-        company_scope(
-            {"_id": to_object_id(user_id), "role": {"$in": list(ASSIGNABLE_ROLES)}}
-        )
-    )
+def _assignee_for(db, user_id, company_id=None):
+    """Return a local admin or employee of the affair's company, or None."""
+    query = {"_id": to_object_id(user_id), "role": {"$in": list(ASSIGNABLE_ROLES)}}
+    if company_id:
+        query["company_id"] = company_id
+        return db.users.find_one(query)
+    return db.users.find_one(company_scope(query))
 
 
 def _generate_activities(db, affair, services, assignee, performed_by):
@@ -331,7 +339,7 @@ def get_affair(affair_id):
 
 @affairs_bp.route("/<affair_id>", methods=["PUT"])
 @jwt_required()
-@local_admin_required
+@admin_required
 def update_affair(affair_id):
     db = get_db()
     payload = request.get_json(silent=True) or {}
@@ -344,22 +352,26 @@ def update_affair(affair_id):
     update_dict = {
         k: v for k, v in update_data.model_dump(exclude_unset=True).items() if v is not None
     }
+
+    old = db.affairs.find_one(company_scope({"_id": to_object_id(affair_id)}))
+    if not old:
+        return jsonify({"error": "Affair not found"}), 404
+    # The affair's own tenant scopes the services and assignee, which matters
+    # for the platform admin, whose token carries no company.
+    tenant_id = old.get("company_id")
+
     if service_ids is not None:
-        services = _services_for(db, service_ids)
+        services = _services_for(db, service_ids, tenant_id)
         if services is None:
             return jsonify({"error": "One or more services were not found"}), 404
         update_dict["service_ids"] = [s["_id"] for s in services]
     if "assigned_to" in update_dict:
-        assignee = _assignee_for(db, update_dict["assigned_to"])
+        assignee = _assignee_for(db, update_dict["assigned_to"], tenant_id)
         if not assignee:
             return jsonify({"error": "Assigned user must be an employee or local manager of your company"}), 400
         update_dict["assigned_to"] = assignee["_id"]
     if not update_dict:
         return jsonify({"error": "No fields to update"}), 400
-
-    old = db.affairs.find_one(company_scope({"_id": to_object_id(affair_id)}))
-    if not old:
-        return jsonify({"error": "Affair not found"}), 404
 
     update_dict["updated_at"] = datetime.now(timezone.utc)
     db.affairs.update_one({"_id": old["_id"]}, {"$set": update_dict})
@@ -405,7 +417,7 @@ def generate_affair_activities(affair_id):
 
 @affairs_bp.route("/<affair_id>", methods=["DELETE"])
 @jwt_required()
-@local_admin_required
+@admin_required
 def delete_affair(affair_id):
     db = get_db()
     affair = db.affairs.find_one(company_scope({"_id": to_object_id(affair_id)}))
