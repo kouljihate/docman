@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.7] - 2026-11-26
+
+### Changed
+- **Three to nine employees per company**: every company now holds 3-9
+  `local_employee` accounts (606 in total) created with
+  `scripts/add_users.py --role local_employee --count 3-9`, each attached to its
+  own company and using the default password `looklook`.
+
 ## [3.21.6] - 2026-11-26
 
 ### Changed
