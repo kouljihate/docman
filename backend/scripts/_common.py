@@ -22,9 +22,8 @@ from bson import ObjectId
 from bson.errors import InvalidId
 
 from app.tenancy import CUSTOMER, LOCAL_ADMIN, LOCAL_EMPLOYEE
+from config import DEFAULT_PASSWORD
 from seed_companies import FIRST_NAMES, LAST_NAMES, _slug
-
-DEFAULT_PASSWORD = "looklook"
 
 # Roles a script may create; legacy names are mapped first.
 MANAGED_ROLES = (LOCAL_ADMIN, LOCAL_EMPLOYEE, CUSTOMER)

@@ -44,6 +44,7 @@ from app.socketio_server import socketio
 
 if args.init_db:
     from app.database import get_db
+    from config import DEFAULT_PASSWORD
     from datetime import datetime, timezone
     from bcrypt import hashpw, gensalt
 
@@ -53,7 +54,7 @@ if args.init_db:
         db.drop_collection(name)
         print(f"  Dropped: {name}")
 
-    password = hashpw("admin123".encode("utf-8"), gensalt()).decode("utf-8")
+    password = hashpw(DEFAULT_PASSWORD.encode("utf-8"), gensalt()).decode("utf-8")
     admin = {
         "username": "admin",
         "email": "admin@docmanager.local",
@@ -66,7 +67,7 @@ if args.init_db:
         "updated_at": datetime.now(timezone.utc),
     }
     db.users.insert_one(admin)
-    print("Admin user created (username: admin, password: admin123)")
+    print(f"Admin user created (username: admin, password: {DEFAULT_PASSWORD})")
 
     print("Database initialized successfully!")
     sys.exit(0)

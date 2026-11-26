@@ -7,13 +7,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from app.database import get_db
 from app import create_app
+from config import DEFAULT_PASSWORD
 
 app = create_app()
 
 with app.app_context():
     db = get_db()
 
-    password = hashpw("admin123".encode("utf-8"), gensalt()).decode("utf-8")
+    password = hashpw(DEFAULT_PASSWORD.encode("utf-8"), gensalt()).decode("utf-8")
     admin = {
         "username": "admin",
         "email": "admin@docmanager.local",
@@ -29,7 +30,7 @@ with app.app_context():
     existing = db.users.find_one({"username": "admin"})
     if not existing:
         db.users.insert_one(admin)
-        print("Admin user created (username: admin, password: admin123)")
+        print(f"Admin user created (username: admin, password: {DEFAULT_PASSWORD})")
     else:
         print("Admin user already exists")
 

@@ -41,7 +41,7 @@ bump and tag.
 - Bundled local MongoDB: `docker compose --profile local-db up --build` (no
   `.env` needed; the `mongo` service is an opt-in `local-db` profile). Stop it
   with `docker compose --profile local-db down`.
-- Optional default admin: `docker compose exec app python seed.py` (`admin` / `admin123`)
+- Optional default admin: `docker compose exec app python seed.py` (`admin` / `looklook`; the default password lives in `backend/config.py` as `DEFAULT_PASSWORD`)
 - Version check: `curl http://localhost:5000/api/health` → `{"status":"ok","db":"connected","version":"..."}`
 
 To move existing local data into a cloud database, keep the local stack up and

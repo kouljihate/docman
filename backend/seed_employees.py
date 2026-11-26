@@ -30,11 +30,11 @@ from bcrypt import gensalt, hashpw
 
 from app.database import get_db
 from app.tenancy import LOCAL_EMPLOYEE
+from config import DEFAULT_PASSWORD
 from seed_companies import FIRST_NAMES, LAST_NAMES, _slug
 
 MIN_EMPLOYEES = 3
 MAX_EMPLOYEES = 7
-DEFAULT_PASSWORD = "looklook"
 # Older rows stored the role before it was renamed.
 LEGACY_EMPLOYEE = "employee"
 EMPLOYEE_ROLES = (LOCAL_EMPLOYEE, LEGACY_EMPLOYEE)

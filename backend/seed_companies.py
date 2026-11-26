@@ -34,9 +34,9 @@ from bcrypt import gensalt, hashpw
 
 from app.database import get_db
 from app.tenancy import LOCAL_ADMIN
+from config import DEFAULT_PASSWORD
 
 DEFAULT_COUNT = 100
-DEFAULT_PASSWORD = "looklook"
 
 COMPANY_NAMES = (
     "Atlas Logistique",

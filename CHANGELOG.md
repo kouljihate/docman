@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.21.9] - 2026-11-26
+
+### Changed
+- **Default password is now `looklook` everywhere**: `DEFAULT_PASSWORD` lives in
+  `backend/config.py` and is used by `seed.py`, the `run.py --init-db` bootstrap,
+  `seed_companies.py`, `seed_employees.py` and `backend/scripts/`, replacing the
+  old `admin123` bootstrap password.
+
 ## [3.21.8] - 2026-11-26
 
 ### Changed
