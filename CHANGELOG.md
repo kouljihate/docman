@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.22.0] - 2026-11-26
+
+### Added
+- **PG-CUSTOMERS view and history buttons**: every customer row now carries a
+  circular view button opening the customer detail page and a circular history
+  button opening a timeline of that customer's affairs and payments
+  (`GET /api/affairs/?customer_id=` and `GET /api/payments/?customer_id=`).
+
 ## [3.21.9] - 2026-11-26
 
 ### Changed

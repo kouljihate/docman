@@ -122,6 +122,24 @@ def test_companies_actions_are_circular_and_include_edit(client, make_token, mak
     assert "saveCompany(event)" in body
 
 
+def test_customers_actions_include_view_and_history(client, make_token, make_user, make_company):
+    company = make_company("Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    client.set_cookie("access_token", make_token(admin))
+
+    body = client.get("/customers").get_data(as_text=True)
+
+    # Action column rounds every button; each row offers view and history.
+    assert 'class="table-actions"' in body
+    assert "/customers/${c._id}" in body
+    assert "bi bi-eye" in body
+    assert "showCustomerHistory(" in body
+    assert "bi bi-clock-history" in body
+    assert 'id="customerHistoryModal"' in body
+    assert 'id="customerHistoryTitle"' in body
+    assert "editCustomer(" in body
+
+
 def test_language_switch_remembers_the_choice_and_returns_to_the_page(client):
     response = client.get("/set-language?lang=fr&next=/tasks?status=open")
 

@@ -130,6 +130,23 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="customerHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-clock-history me-2"></i><span id="customerHistoryTitle">{{ _('customer_history') }}</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="customerHistoryBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -160,6 +177,12 @@ async function loadCustomers() {
             <td><span class="badge bg-${c.is_active ? 'success' : 'danger'}">${c.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
             <td><span class="badge bg-info">${c.task_stats?.total || 0}</span></td>
             <td class="table-actions">
+                <a class="btn btn-sm btn-outline-secondary" href="/customers/${c._id}" title="{{ _('view') }}">
+                    <i class="bi bi-eye"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-info" onclick="showCustomerHistory('${c._id}')" title="{{ _('customer_history') }}">
+                    <i class="bi bi-clock-history"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-primary" onclick="editCustomer('${c._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -256,6 +279,51 @@ async function deleteCustomer(id) {
             loadCustomers();
         });
     });
+}
+
+async function showCustomerHistory(id) {
+    const c = customersData.find(x => x._id === id);
+    document.getElementById('customerHistoryTitle').textContent = c ? c.full_name : '{{ _('customer_history') }}';
+    const body = document.getElementById('customerHistoryBody');
+    body.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>{{ _('loading') }}</div>';
+    new bootstrap.Modal(document.getElementById('customerHistoryModal')).show();
+
+    const [affairs, payments] = await Promise.all([
+        apiRequest('/affairs/?customer_id=' + encodeURIComponent(id)),
+        apiRequest('/payments/?customer_id=' + encodeURIComponent(id)),
+    ]);
+
+    const entries = [];
+    (affairs || []).forEach(a => entries.push({
+        date: a.created_at,
+        icon: 'bi-folder2-open',
+        tone: a.affair_type === 'enterprise' ? 'primary' : 'secondary',
+        title: a.reference ? `${a.reference} · ${a.name}` : a.name,
+        meta: [a.affair_type, a.assigned_to_name].filter(Boolean).join(' · '),
+    }));
+    (payments || []).forEach(p => entries.push({
+        date: p.due_date || p.created_at,
+        icon: 'bi-cash-coin',
+        tone: 'success',
+        title: `${p.amount} ${p.currency || ''}`.trim(),
+        meta: [p.method, p.status].filter(Boolean).join(' · '),
+    }));
+
+    if (!entries.length) {
+        body.innerHTML = '<p class="text-muted mb-0">{{ _('no_history') }}</p>';
+        return;
+    }
+    entries.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    body.innerHTML = entries.map(e => `
+        <div class="d-flex align-items-start mb-3">
+            <div class="me-3 text-${e.tone}"><i class="bi ${e.icon} fs-5"></i></div>
+            <div class="flex-fill">
+                <div class="fw-semibold">${e.title}</div>
+                <div class="small text-muted">${e.meta}</div>
+                <div class="small text-muted">${formatDate(e.date)}</div>
+            </div>
+        </div>
+    `).join('');
 }
 
 // ── Bulk Import ─────────────────────────────────────
