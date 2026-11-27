@@ -43,13 +43,18 @@
         });
     }
 
-    function filterRows(table, input) {
+    function filterRows(table, input, resetPage) {
         var needle = normalize(input.value);
         bodyRows(table).forEach(function (row) {
             var match = !needle || normalize(row.textContent).indexOf(needle) !== -1;
             row.classList.toggle('d-none', !match);
         });
         table.classList.toggle('table-searching', needle !== '');
+        // The page holds the matches of every page, not just the rows that were
+        // on screen before the search.
+        if (typeof window.refreshTablePagination === 'function') {
+            window.refreshTablePagination(table, resetPage === true);
+        }
     }
 
     /** Split the table width in the 40% / 20% / 40% toolbar columns. */
@@ -299,12 +304,12 @@
         head.insertBefore(row, head.firstChild);
 
         search.input.addEventListener('input', function () {
-            filterRows(table, search.input);
+            filterRows(table, search.input, true);
         });
         search.input.addEventListener('keydown', function (event) {
             if (event.key === 'Escape') {
                 search.input.value = '';
-                filterRows(table, search.input);
+                filterRows(table, search.input, true);
             }
         });
 

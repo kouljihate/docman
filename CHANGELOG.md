@@ -4,6 +4,15 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.28.1] - 2026-11-27
+
+### Fixed
+- Table search now covers the whole list instead of only the page on screen.
+  A `PG-CUSTOMERS` match that lived on another page used to stay on that page's
+  hidden row, so the table looked empty: the matches from every page are now
+  re-paged together from the first page, and the page numbers and the
+  "Showing x–y of total" counter follow the matches only.
+
 ## [3.28.0] - 2026-11-27
 
 ### Added

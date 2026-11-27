@@ -329,7 +329,9 @@ function renderTablePagination(table) {
     const tbody = table.tBodies[0];
     if (!tbody) return;
 
-    const rows = Array.from(tbody.rows);
+    // Rows the table search hid are left out of the count, so the matches from
+    // every page are paged together instead of staying on their original page.
+    const rows = Array.from(tbody.rows).filter((row) => !row.classList.contains('d-none'));
     const pages = Math.max(1, Math.ceil(rows.length / TABLE_PAGE_SIZE));
     const state = tablePagination.get(table) || { page: 1 };
     state.page = Math.min(Math.max(1, state.page), pages);
@@ -382,6 +384,15 @@ function renderTablePagination(table) {
                 </ul>
             </nav>
         </div>`;
+}
+
+/* Re-page one table after its search filtered the rows, optionally jumping back
+ * to the first page so the first matches are visible straight away. */
+function refreshTablePagination(table, reset) {
+    if (!table.tBodies.length || table.hasAttribute('data-server-pagination')) return;
+    const state = tablePagination.get(table);
+    if (state && reset) state.page = 1;
+    renderTablePagination(table);
 }
 
 function paginateAllTables() {

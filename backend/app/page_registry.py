@@ -303,7 +303,7 @@ PAGES = {
         "roles": ["local_admin"],
         "summary": "Customer directory of the current company, with photo ID, phone, status and a per-customer affair count.",
         "features": [
-            "Searchable customer table with pagination",
+            "Search over the whole customer directory, with the matches paged ten at a time",
             "Create / edit customer dialog (identity, CIN, photo, status)",
             "CSV bulk import",
             "Circular view, history, edit and delete buttons per row",
