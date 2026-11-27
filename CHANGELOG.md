@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.4] - 2026-11-27
+
+### Changed
+- **PG-CUSTOMERS centres its badge columns**: the affairs, status and total
+  tasks badges are now centred under their header labels instead of sitting at
+  the start edge of the cell.
+
 ## [3.26.3] - 2026-11-27
 
 ### Changed
