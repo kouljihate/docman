@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.3] - 2026-11-27
+
+### Changed
+- **Table header labels are centred in their column**: every header cell except
+  the first one is centred, while the first column keeps the start alignment for
+  the record name. The right-aligned Payment amount and Companies Actions
+  headers were brought in line.
+
 ## [3.26.2] - 2026-11-27
 
 ### Changed

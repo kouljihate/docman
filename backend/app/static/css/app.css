@@ -887,3 +887,9 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     padding: 0.4em 0.7em;
     font-weight: 600;
 }
+
+/* Header labels sit in the middle of their own column; the first column (the
+   name of the record) keeps the natural start alignment. */
+.table > thead > tr > th:not(:first-child) {
+    text-align: center;
+}
