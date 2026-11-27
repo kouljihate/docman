@@ -4,6 +4,26 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.23.0] - 2026-11-27
+
+### Added
+- **Service and task values follow the selected language**: the six service
+  lines and their 36 tasks now carry English, French and Arabic values
+  (`name_i18n`, `title_i18n`, `description_i18n`), and `GET /api/tasks/` and
+  `GET /api/services/` answer in the language picked in the footer language
+  dialog (`lang` cookie or query argument), falling back to the stored French.
+- `backend/app/data/service_catalog.py`: single trilingual source of the service
+  and task catalogue (short title plus full instruction per language).
+- `backend/localize_services_tasks.py`: backfills those translations on the
+  existing seeded rows for every company; idempotent, with `--company`,
+  `--dry-run`, `--quiet` and `--batch-size`.
+
+### Changed
+- `test/seed_services_tasks.py` reads the catalogue from the application and
+  writes the translations with each service and task, so a fresh seed is
+  multilingual immediately. It also matches existing rows by description, which
+  keeps it idempotent now that titles hold the short label.
+
 ## [3.22.2] - 2026-11-27
 
 ### Changed

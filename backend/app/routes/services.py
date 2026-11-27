@@ -20,6 +20,7 @@ from app.tenancy import (
     role_required,
     to_object_id,
 )
+from app.utils.localize import localize_service
 
 services_bp = Blueprint("services", __name__, url_prefix="/api/services")
 
@@ -113,7 +114,7 @@ def create_service():
         description=f"Service '{service_data.name}' created",
     )
 
-    return jsonify(ServiceResponse(**service_dict).model_dump(by_alias=True)), 201
+    return jsonify(ServiceResponse(**localize_service(service_dict)).model_dump(by_alias=True)), 201
 
 
 @services_bp.route("/", methods=["GET"])
@@ -129,7 +130,7 @@ def list_services():
             return jsonify({"error": "company_id is required"}), 400
         query["company_id"] = company_id
     services = list(db.services.find(query).sort("name", 1))
-    return jsonify([ServiceResponse(**s).model_dump(by_alias=True) for s in services]), 200
+    return jsonify([ServiceResponse(**localize_service(s)).model_dump(by_alias=True) for s in services]), 200
 
 
 @services_bp.route("/<service_id>", methods=["GET"])
@@ -140,7 +141,7 @@ def get_service(service_id):
     service = db.services.find_one(company_scope({"_id": to_object_id(service_id)}))
     if not service:
         return jsonify({"error": "Service not found"}), 404
-    return jsonify(ServiceResponse(**service).model_dump(by_alias=True)), 200
+    return jsonify(ServiceResponse(**localize_service(service)).model_dump(by_alias=True)), 200
 
 
 @services_bp.route("/<service_id>", methods=["PUT"])
@@ -182,7 +183,7 @@ def update_service(service_id):
     )
 
     updated = db.services.find_one({"_id": old["_id"]})
-    return jsonify(ServiceResponse(**updated).model_dump(by_alias=True)), 200
+    return jsonify(ServiceResponse(**localize_service(updated)).model_dump(by_alias=True)), 200
 
 
 @services_bp.route("/<service_id>", methods=["DELETE"])

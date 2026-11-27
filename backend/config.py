@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 
-VERSION = "3.22.2"
+VERSION = "3.23.0"
 
 # Password handed to bootstrapped and seeded accounts when none is given.
 DEFAULT_PASSWORD = "looklook"

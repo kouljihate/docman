@@ -16,6 +16,7 @@ from app.tenancy import (
     local_staff_required,
     to_object_id,
 )
+from app.utils.localize import localize_task
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api/tasks")
 
@@ -57,7 +58,7 @@ def create_task():
         description=f"Task '{task_data.title}' created",
     )
 
-    return jsonify(TaskResponse(**task_dict).model_dump(by_alias=True)), 201
+    return jsonify(TaskResponse(**localize_task(task_dict)).model_dump(by_alias=True)), 201
 
 
 @tasks_bp.route("/", methods=["GET"])
@@ -75,7 +76,7 @@ def list_tasks():
     sort_order = -1 if request.args.get("order", "desc") == "desc" else 1
 
     tasks = list(db.tasks.find(query).sort(sort_field, sort_order))
-    return jsonify([TaskResponse(**t).model_dump(by_alias=True) for t in tasks]), 200
+    return jsonify([TaskResponse(**localize_task(t)).model_dump(by_alias=True) for t in tasks]), 200
 
 
 @tasks_bp.route("/<task_id>", methods=["GET"])
@@ -86,7 +87,7 @@ def get_task(task_id):
     task = db.tasks.find_one(company_scope({"_id": to_object_id(task_id)}))
     if not task:
         return jsonify({"error": "Task not found"}), 404
-    return jsonify(TaskResponse(**task).model_dump(by_alias=True)), 200
+    return jsonify(TaskResponse(**localize_task(task)).model_dump(by_alias=True)), 200
 
 
 @tasks_bp.route("/<task_id>", methods=["PUT"])
@@ -121,7 +122,7 @@ def update_task(task_id):
     )
 
     updated = db.tasks.find_one({"_id": old["_id"]})
-    return jsonify(TaskResponse(**updated).model_dump(by_alias=True)), 200
+    return jsonify(TaskResponse(**localize_task(updated)).model_dump(by_alias=True)), 200
 
 
 @tasks_bp.route("/<task_id>", methods=["DELETE"])
