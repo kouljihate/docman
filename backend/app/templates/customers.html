@@ -172,7 +172,7 @@ async function loadCustomers() {
             <td class="text-center"><span class="badge bg-info">${c.affair_count || 0}</span></td>
             <td class="text-center"><span class="badge bg-${c.is_active ? 'success' : 'danger'}">${c.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
             <td class="text-center"><span class="badge bg-info">${c.task_stats?.total || 0}</span></td>
-            <td class="table-actions">
+            <td class="table-actions text-center">
                 <a class="btn btn-sm btn-outline-secondary" href="/customers/${c._id}" title="{{ _('view') }}">
                     <i class="bi bi-eye"></i>
                 </a>

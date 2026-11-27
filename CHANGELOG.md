@@ -4,6 +4,12 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.5] - 2026-11-27
+
+### Changed
+- **PG-CUSTOMERS centres its action buttons too**: the view, history, edit and
+  delete buttons are centred under the Actions header like the other columns.
+
 ## [3.26.4] - 2026-11-27
 
 ### Changed
