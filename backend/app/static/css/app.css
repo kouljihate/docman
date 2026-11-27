@@ -888,6 +888,13 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     font-weight: 600;
 }
 
+/* Activity status badges: pending is yellow (bg-warning), in progress is this
+   orange, completed is green (bg-success). */
+.bg-orange {
+    background-color: #fd7e14 !important;
+    color: #212529 !important;
+}
+
 /* Header labels sit in the middle of their own column; the first column (the
    name of the record) keeps the natural start alignment. */
 .table > thead > tr > th:not(:first-child) {

@@ -59,7 +59,9 @@
 
     /** Split the table width in the 40% / 20% / 40% toolbar columns. */
     function splitColumns(total) {
-        if (total < 3) return null;
+        if (total < 2) return null;
+        // Two columns still get a right-hand toolbar column (search | export).
+        if (total === 2) return [1, 0, 1];
         var first = Math.max(1, Math.round(total * 0.4));
         var middle = Math.max(1, Math.round(total * 0.2));
         var last = total - first - middle;
@@ -287,26 +289,30 @@
 
         var spans = splitColumns(columns);
         if (spans) {
+            // Without the middle spacer the two remaining columns share the row.
+            var sideWidth = spans[1] > 0 ? '40%' : '50%';
+
             var searchCell = document.createElement('td');
             searchCell.colSpan = spans[0];
-            searchCell.style.width = '40%';
+            searchCell.style.width = sideWidth;
             searchCell.className = 'table-toolbar-cell';
             searchCell.appendChild(search.bar);
 
-            var spacer = document.createElement('td');
-            spacer.colSpan = spans[1];
-            spacer.style.width = '20%';
-            spacer.className = 'table-toolbar-gap';
-
             var exportCell = document.createElement('td');
             exportCell.colSpan = spans[2];
-            exportCell.style.width = '40%';
+            exportCell.style.width = sideWidth;
             exportCell.className = 'table-toolbar-cell table-toolbar-end';
             placeToolbarButtons(exportCell, exportButton);
             exportCell.appendChild(exportButton);
 
             row.appendChild(searchCell);
-            row.appendChild(spacer);
+            if (spans[1] > 0) {
+                var spacer = document.createElement('td');
+                spacer.colSpan = spans[1];
+                spacer.style.width = '20%';
+                spacer.className = 'table-toolbar-gap';
+                row.appendChild(spacer);
+            }
             row.appendChild(exportCell);
         } else {
             // Very narrow tables keep both controls on one row.

@@ -240,3 +240,18 @@ def test_assigning_the_affair_hands_over_its_waiting_activities(
     activity = db.activities.find_one({"affair_id": ObjectId(created["_id"])})
     assert activity["status"] == "assigned"
     assert activity["assigned_to"] == employee["_id"]
+
+
+def test_activity_status_badges_are_yellow_orange_and_green(
+    client, make_token, make_user, make_company
+):
+    """PG-ACTIVITIES: pending yellow, in progress orange, completed green."""
+    company = make_company("Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    client.set_cookie("access_token", make_token(admin))
+
+    body = client.get("/activities").get_data(as_text=True)
+
+    assert "'pending': 'warning'" in body
+    assert "'in_progress': 'orange'" in body
+    assert "'completed': 'success'" in body

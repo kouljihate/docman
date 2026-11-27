@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.32.1] - 2026-11-27
+
+### Changed
+- PG-ACTIVITIES status badges follow the requested palette: Initiate (pending)
+  yellow, In Progress orange (new `.bg-orange` utility), Done (completed) green.
+- PG-TASKS: the page header is back to its previous layout with the local
+  admin's Create task button. A local employee gets the Create task button in
+  the table's third toolbar column, right before Export; a two-column table now
+  still keeps a right-hand toolbar column instead of collapsing to one cell.
+
 ## [3.32.0] - 2026-11-27
 
 ### Added

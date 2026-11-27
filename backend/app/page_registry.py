@@ -445,7 +445,7 @@ PAGES = {
         "summary": "All tasks of the company. Rows open the task detail dialog; the pencil edits the task and local admins can delete it. An employee only sees the title and description columns, with a New task button next to Export.",
         "features": [
             "Task table with title and description (an employee sees only these two columns)",
-            "New task button in the table toolbar, just before Export",
+            "Create task in the page header for the local admin, and in the third toolbar column right before Export for an employee",
             "Values shown in the interface language (English, French, Arabic) when a translation exists",
             "Task detail dialog with audit history and quick status buttons",
             "Edit dialog (title, description, status)",

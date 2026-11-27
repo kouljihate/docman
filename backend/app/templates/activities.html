@@ -174,10 +174,11 @@ async function loadActivities() {
         return;
     }
     tbody.innerHTML = data.map(a => {
+        // Initiate = yellow, In progress = orange, Done = green.
         const statusBadge = {
             'pending': 'warning',
             'assigned': 'primary',
-            'in_progress': 'info',
+            'in_progress': 'orange',
             'completed': 'success',
             'cancelled': 'danger',
         }[a.status] || 'secondary';

@@ -7,15 +7,24 @@
     <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>
         {% if user.role == 'customer' %}{{ _('my_tasks') }}{% else %}{{ _('task_list') }}{% endif %}
     </h4>
+    <div class="d-flex gap-2">
+        {% if user.role == 'local_admin' %}
+        <a href="/tasks/create" class="btn btn-cse btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>{{ _('create_task') }}
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <div class="card">
     <div class="card-body">
-        <!-- Moved by table_search.js into the table toolbar, just before Export. -->
+        {% if user.role == 'local_employee' %}
+        <!-- Moved by table_search.js into the third toolbar column, near Export. -->
         <a href="/tasks/create" id="newTaskBtn" class="btn btn-sm btn-cse d-none ms-2"
            data-table-toolbar title="{{ _('create_task') }}">
             <i class="bi bi-plus-lg me-1"></i>{{ _('create_task') }}
         </a>
+        {% endif %}
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-light">

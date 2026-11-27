@@ -103,9 +103,11 @@ def test_employee_tasks_page_shows_two_columns_and_the_new_task_button(
     assert "Description</th>" in body
     assert "Actions</th>" not in body
     assert 'colspan="2"' in body
-    # The New task button is declared for the table toolbar, before Export.
+    # The employee's Create task button lives in the table's third toolbar
+    # column, right before Export; the page header keeps no button.
     assert 'id="newTaskBtn"' in body
     assert "data-table-toolbar" in body
+    assert '<a href="/tasks/create" class="btn btn-cse btn-sm">' not in body
 
 
 def test_local_admin_tasks_page_keeps_the_actions_column(
@@ -118,5 +120,6 @@ def test_local_admin_tasks_page_keeps_the_actions_column(
     body = client.get("/tasks").get_data(as_text=True)
 
     assert "Actions</th>" in body
-    assert 'id="newTaskBtn"' in body
-    assert "data-table-toolbar" in body
+    # The admin's Create task button is back in the page header, not the toolbar.
+    assert '<a href="/tasks/create" class="btn btn-cse btn-sm">' in body
+    assert 'id="newTaskBtn"' not in body
