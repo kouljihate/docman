@@ -143,6 +143,21 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="customerInfoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-vcard me-2"></i>{{ _('customer_info') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="customerInfoBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('close') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -178,7 +193,7 @@ async function loadActivities() {
         <tr>
             <td><strong>${a.title}</strong>${a.affair_name ? `<br><small class="text-muted"><i class="bi bi-folder me-1"></i>${a.affair_reference ? `<code>${a.affair_reference}</code> · ` : ''}${a.affair_name}</small>` : ''}</td>
             <td>${a.description || '-'}</td>
-            <td>${a.customer_name || '-'}</td>
+            <td>${a.customer_id ? `<a href="#" class="text-decoration-none" onclick="showCustomerInfo('${a.customer_id}');return false;">${a.customer_name || '-'}</a>` : (a.customer_name || '-')}</td>
             <td>${a.assigned_to_name || '-'}</td>
             <td><span class="badge rounded-pill bg-info" style="cursor:pointer" onclick="toggleActTasks('${a._id}')">${taskNames.length} {{ _('tasks') }}</span></td>
             <td><span class="badge rounded-pill bg-${statusBadge}">${statusLabel}</span></td>
@@ -306,6 +321,31 @@ async function saveNote() {
         showToast('{{ _('note_saved') }}');
         loadActivities();
     }
+}
+
+async function showCustomerInfo(customerId) {
+    if (!customerId) return;
+    const body = document.getElementById('customerInfoBody');
+    body.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>{{ _('loading') }}</div>';
+    new bootstrap.Modal(document.getElementById('customerInfoModal')).show();
+
+    const c = await apiRequest(`/customers/${customerId}`);
+    if (!c || c.error) {
+        body.innerHTML = `<p class="text-muted mb-0">${(c && c.error) || '-'}</p>`;
+        return;
+    }
+    const rows = [
+        ['{{ _('full_name') }}', c.full_name],
+        ['{{ _('email') }}', c.email],
+        ['{{ _('phone') }}', c.phone],
+        ['{{ _('cin') }}', c.cin],
+        ['{{ _('address') }}', c.address],
+        ['{{ _('affairs') }}', c.affair_count],
+        ['{{ _('created_at') }}', c.created_at ? formatDate(c.created_at) : null],
+    ].filter(([, value]) => value !== null && value !== undefined && value !== '');
+    body.innerHTML = `<table class="table table-sm mb-0">${rows.map(([label, value]) => `
+        <tr><th class="text-muted fw-normal" style="width:40%">${label}</th><td>${value}</td></tr>
+    `).join('')}</table>`;
 }
 
 let actAllTasks = [];

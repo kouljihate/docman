@@ -35,6 +35,12 @@ MODALS = {
         "title": "Table export",
         "purpose": "Opened by the Export button of every data table; picks CSV or PDF before downloading the rows currently shown.",
     },
+    "customerInfoModal": {
+        "id": "MDL-CUSTOMER-INFO",
+        "element": "customerInfoModal",
+        "title": "Customer information",
+        "purpose": "Read-only dialog opened from the activity customer link showing that customer's details and affair count.",
+    },
     "assignActivityModal": {
         "id": "MDL-ASSIGN-ACTIVITY",
         "element": "assignActivityModal",
@@ -443,10 +449,11 @@ PAGES = {
         "features": [
             "Activity list with affair reference, assignee and status (Pending, Assigned, In progress, Completed)",
             "Assign dialog handing a pending activity to a local employee",
+            "Customer column linking to the customer's information dialog (name, contact, CIN, address, affairs)",
             "Create activity dialog (customer, affair, tasks, assignee)",
             "Note dialog appending to the activity timeline",
         ],
-        "modals": ["activityModal", "noteModal", "assignActivityModal"],
+        "modals": ["activityModal", "noteModal", "assignActivityModal", "customerInfoModal"],
         "apis": [
             "GET /api/activities/",
             "POST /api/activities/",

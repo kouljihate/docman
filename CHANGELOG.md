@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.27.2] - 2026-11-27
+
+### Changed
+- PG-ACTIVITIES: the Customer column value is now a link opening the
+  `#customerInfoModal` (`MDL-CUSTOMER-INFO`), which reads that customer from
+  `GET /api/customers/<id>` and shows name, email, phone, CIN, address, affair
+  count and creation date.
+
 ## [3.27.1] - 2026-11-27
 
 ### Changed
