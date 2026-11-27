@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.29.1] - 2026-11-27
+
+### Changed
+- `PG-NOTIFICATIONS`: the Created, Status and Actions columns — headers and
+  values — are centred, so the read date, the read state and the round
+  mark-as-read button line up in the middle of their columns.
+
 ## [3.29.0] - 2026-11-27
 
 ### Added

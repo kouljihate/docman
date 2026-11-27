@@ -24,9 +24,9 @@
                         <th>{{ _('type') }}</th>
                         <th>{{ _('title') }}</th>
                         <th>{{ _('message') }}</th>
-                        <th>{{ _('created_at') }}</th>
-                        <th>{{ _('status') }}</th>
-                        <th class="text-end">{{ _('actions') }}</th>
+                        <th class="text-center">{{ _('created_at') }}</th>
+                        <th class="text-center">{{ _('status') }}</th>
+                        <th class="text-center">{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="notificationsTableBody">
@@ -92,9 +92,9 @@ async function loadNotificationsPage() {
             <td><span class="badge rounded-pill bg-${typeClass}">${n.type}</span></td>
             <td>${n.title}</td>
             <td>${n.message}</td>
-            <td><small class="text-muted">${formatDate(n.created_at)}</small></td>
-            <td>${n.read ? '<span class="badge rounded-pill bg-secondary">{{ _('read') }}</span>' : '<span class="badge rounded-pill bg-primary">{{ _('new') }}</span>'}</td>
-            <td class="text-end">
+            <td class="text-center"><small class="text-muted">${formatDate(n.created_at)}</small></td>
+            <td class="text-center">${n.read ? '<span class="badge rounded-pill bg-secondary">{{ _('read') }}</span>' : '<span class="badge rounded-pill bg-primary">{{ _('new') }}</span>'}</td>
+            <td class="text-center">
                 ${n.read ? '' : `<button class="btn btn-sm btn-outline-success rounded-circle" onclick="markNotificationRead('${n._id}')" title="{{ _('mark_read') }}">
                     <i class="bi bi-check-lg"></i>
                 </button>`}
