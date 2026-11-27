@@ -22,14 +22,16 @@ from app.tenancy import (
 activities_bp = Blueprint("activities", __name__, url_prefix="/api/activities")
 
 
-def _serialize_activity(activity):
-    """JSON-ready copy of an activity document."""
+def _serialize_document(document):
+    """JSON-ready copy of a Mongo document (ObjectIds become plain strings)."""
     data = {}
-    for key, value in activity.items():
+    for key, value in document.items():
         if isinstance(value, ObjectId):
             data[key] = str(value)
         elif isinstance(value, list):
             data[key] = [str(item) if isinstance(item, ObjectId) else item for item in value]
+        elif isinstance(value, dict):
+            data[key] = _serialize_document(value)
         else:
             data[key] = value
     return data
@@ -137,7 +139,7 @@ def create_activity():
     customer = db.users.find_one({"_id": ObjectId(customer_id)}, {"full_name": 1})
     activity_dict["customer_name"] = customer["full_name"] if customer else None
 
-    return jsonify(activity_dict), 201
+    return jsonify(_serialize_document(activity_dict)), 201
 
 
 @activities_bp.route("/", methods=["GET"])
@@ -217,7 +219,7 @@ def list_activities():
         {"$project": {"assigned_user": 0, "assigned_by_user": 0, "customer_user": 0, "tasks": 0, "affair": 0}},
     ]
 
-    activities = [_serialize_activity(a) for a in db.activities.aggregate(pipeline)]
+    activities = [_serialize_document(a) for a in db.activities.aggregate(pipeline)]
     return jsonify(activities), 200
 
 
@@ -268,7 +270,7 @@ def get_activity(activity_id):
     activities = list(db.activities.aggregate(pipeline))
     if not activities:
         return jsonify({"error": "Activity not found"}), 404
-    return jsonify(_serialize_activity(activities[0])), 200
+    return jsonify(_serialize_document(activities[0])), 200
 
 
 @activities_bp.route("/<activity_id>/assign", methods=["PUT"])
@@ -357,7 +359,7 @@ def assign_activity(activity_id):
         )
 
     updated = db.activities.find_one({"_id": activity["_id"]})
-    return jsonify(_serialize_activity(updated)), 200
+    return jsonify(_serialize_document(updated)), 200
 
 
 @activities_bp.route("/<activity_id>/status", methods=["PUT"])
@@ -472,7 +474,7 @@ def update_activity_status(activity_id):
     )
 
     updated = db.activities.find_one({"_id": ObjectId(activity_id)})
-    return jsonify(_serialize_activity(updated)), 200
+    return jsonify(_serialize_document(updated)), 200
 
 
 @activities_bp.route("/notifications", methods=["GET"])
@@ -480,17 +482,13 @@ def update_activity_status(activity_id):
 def list_notifications():
     db = get_db()
     identity = get_jwt_identity()
+    # Notifications carry company_id, affair_id and sender_id ObjectIds, so
+    # every document goes through the same conversion as activities: a raw
+    # jsonify() used to fail and the assignee never saw the notification.
     notifications = list(
         db.notifications.find({"user_id": ObjectId(identity)}).sort("created_at", -1).limit(50)
     )
-    for n in notifications:
-        if "_id" in n and isinstance(n["_id"], ObjectId):
-            n["_id"] = str(n["_id"])
-        if "user_id" in n and isinstance(n["user_id"], ObjectId):
-            n["user_id"] = str(n["user_id"])
-        if "activity_id" in n and isinstance(n["activity_id"], ObjectId):
-            n["activity_id"] = str(n["activity_id"])
-    return jsonify(notifications), 200
+    return jsonify([_serialize_document(n) for n in notifications]), 200
 
 
 @activities_bp.route("/notifications/read", methods=["POST"])

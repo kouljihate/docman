@@ -455,7 +455,7 @@ PAGES = {
         "summary": "Activities of the company, linked to their affair, customer and tasks. Every affair creates one, pending until a local admin assigns it to an employee; employees start and complete the ones assigned to them.",
         "features": [
             "Activity list with affair reference, assignee and status (Pending, Assigned, In progress, Completed)",
-            "Assign dialog handing a pending activity to a local employee",
+            "Assign dialog handing a pending activity to a local employee, who receives an activity_assigned notification in the bell, its dropdown and the notifications page",
             "Customer column linking to the customer's information dialog (name, contact, CIN, address, affairs)",
             "Create activity dialog (customer, affair, tasks, assignee)",
             "Note dialog appending to the activity timeline",

@@ -4,6 +4,20 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.28.2] - 2026-11-27
+
+### Fixed
+- Activity assignment notifications now reach the assignee: the rows created for
+  an assignment carry `company_id`, `affair_id` and `sender_id` ObjectIds, and
+  `GET /api/activities/notifications` sent them to `jsonify()` untouched, so the
+  endpoint answered 500 and the bell, its dropdown and the notifications page
+  showed nothing. Every notification document now goes through the shared
+  ObjectId serialiser.
+- `POST /api/activities/` no longer answers 500 when the local admin creates an
+  activity that is already assigned; it returns the serialised activity, so the
+  `activity_assigned` notification written for the employee is not lost behind
+  a failed response.
+
 ## [3.28.1] - 2026-11-27
 
 ### Fixed

@@ -45,6 +45,57 @@ def _create_affair(client, name, customer, **extra):
     return client.post("/api/affairs/", json=payload)
 
 
+def test_created_assigned_activity_is_returned_and_notifies_the_employee(
+    client, db, make_token, make_user, make_company
+):
+    company, admin, employee, customer = _setup(make_company, make_user, db)
+    _login(client, make_token, admin)
+
+    response = client.post(
+        "/api/activities/",
+        json={
+            "title": "Dossier direct",
+            "customer_id": str(customer["_id"]),
+            "assigned_to": str(employee["_id"]),
+            "task_ids": [],
+        },
+    )
+
+    assert response.status_code == 201, response.get_json()
+    payload = response.get_json()
+    assert payload["_id"]
+    assert payload["company_id"] == str(company["_id"])
+    assert payload["assigned_to"] == str(employee["_id"])
+    assert db.notifications.count_documents(
+        {"user_id": employee["_id"], "type": "activity_assigned"}
+    ) == 1
+
+
+def test_assignee_reads_the_activity_notification_through_the_api(
+    client, db, make_token, make_user, make_company
+):
+    company, admin, employee, customer = _setup(make_company, make_user, db)
+    _login(client, make_token, admin)
+    _create_affair(client, "Dossier notification", customer)
+    activity = db.activities.find_one({"company_id": company["_id"]})
+    client.put(
+        f"/api/activities/{activity['_id']}/assign",
+        json={"assigned_to": str(employee["_id"])},
+    )
+
+    _login(client, make_token, employee)
+    response = client.get("/api/activities/notifications")
+
+    assert response.status_code == 200, response.get_json()
+    notifications = response.get_json()
+    assert [n["type"] for n in notifications] == ["activity_assigned"]
+    assert notifications[0]["activity_id"] == str(activity["_id"])
+    assert notifications[0]["company_id"] == str(company["_id"])
+    assert notifications[0]["read"] is False
+    assert "Dossier notification" in notifications[0]["message"]
+    assert client.get("/api/activities/notifications/unread-count").get_json() == {"count": 1}
+
+
 def test_affair_without_service_still_gets_a_pending_activity(
     client, db, make_token, make_user, make_company
 ):
