@@ -4,6 +4,22 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.30.0] - 2026-11-27
+
+### Added
+- Every dialog registered in `page_registry.py` now carries its form id
+  (`form`), so all modal forms are identified: `settingsForm`,
+  `tableExportForm`, `companyForm`, `userForm`, `customerForm`, `affairForm`,
+  `serviceForm`, `activityForm`, `assignActivityForm`, `taskEditForm`,
+  `documentForm`, `paymentForm`, `sendNotificationForm`, `companySetupForm`,
+  `changePasswordForm` and `headerSendForm`. Read-only and confirmation dialogs
+  register `None`.
+- The page-info dialog lists a **Form** column next to each modal's element.
+
+### Fixed
+- The language form in the settings dialog was the only modal form without an
+  `id`; it is now `settingsForm`.
+
 ## [3.29.1] - 2026-11-27
 
 ### Changed

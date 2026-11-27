@@ -82,7 +82,7 @@
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form method="get" action="{{ url_for('set_language') }}">
+                <form id="settingsForm" method="get" action="{{ url_for('set_language') }}">
                     <div class="modal-body">
                         <p class="form-label fw-semibold mb-2">{{ _('select_language') }}</p>
                         <input type="hidden" name="next" value="{{ footer_next }}">
@@ -165,13 +165,14 @@
                     <div class="table-responsive">
                         <table class="table table-sm align-middle small mb-3">
                             <thead class="table-light">
-                                <tr><th>ID</th><th>Element</th><th>Title</th><th>Purpose</th></tr>
+                                <tr><th>ID</th><th>Element</th><th>Form</th><th>Title</th><th>Purpose</th></tr>
                             </thead>
                             <tbody>
                                 {% for modal in page_info.modals %}
                                 <tr>
                                     <td><code>{{ modal.id }}</code></td>
                                     <td><code>#{{ modal.element }}</code></td>
+                                    <td>{% if modal.form %}<code>#{{ modal.form }}</code>{% else %}<span class="text-muted">—</span>{% endif %}</td>
                                     <td>{{ modal.title }}</td>
                                     <td class="text-muted">{{ modal.purpose }}</td>
                                 </tr>

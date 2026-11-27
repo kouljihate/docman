@@ -56,6 +56,25 @@ def test_base_modals_live_in_the_base_template():
         assert f'id="{MODALS[modal]["element"]}"' in source
 
 
+def test_every_modal_records_an_existing_form_id():
+    sources = {path.name: path.read_text(encoding="utf-8") for path in TEMPLATES.glob("*.html")}
+    form_ids = []
+    for key, modal in MODALS.items():
+        assert "form" in modal, key
+        if modal["form"] is None:
+            continue
+        form_ids.append(modal["form"])
+        hosts = [src for src in sources.values() if f'id="{modal["element"]}"' in src]
+        assert hosts, f"{key} is not rendered by any template"
+        assert any(f'id="{modal["form"]}"' in src for src in hosts), (
+            f"{key} does not render its form #{modal['form']}"
+        )
+
+    # A form id is used once and never doubles as a modal element id.
+    assert len(form_ids) == len(set(form_ids))
+    assert not set(form_ids) & {modal["element"] for modal in MODALS.values()}
+
+
 def test_page_info_resolves_endpoints_and_expands_modals():
     assert page_info("unknown_endpoint") is None
 
