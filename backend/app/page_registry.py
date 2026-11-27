@@ -376,7 +376,7 @@ PAGES = {
         "features": [
             "Service cards / table with price and task count",
             "Create / edit service dialog with its tasks",
-            "Expandable task panel grouped by service",
+            "Expandable panel listing each service's task titles (no assignee, status or priority)",
         ],
         "modals": ["serviceModal"],
         "apis": ["GET /api/services/", "POST /api/services/", "PUT /api/services/<id>", "DELETE /api/services/<id>", "GET /api/tasks/"],

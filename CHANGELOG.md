@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.23.1] - 2026-11-27
+
+### Changed
+- **PG-SERVICES lists service tasks by title only**: the expanded task panel no
+  longer shows the Assigned To, Status and Priority columns, which do not belong
+  to the service catalogue (and were empty because the task API does not return
+  them). The panel is now a plain list of that service's task titles.
+
 ## [3.23.0] - 2026-11-27
 
 ### Added
