@@ -51,3 +51,72 @@ def test_task_list_returns_service_id(client, db, make_token, make_user, make_co
     assert len(tasks) == 1
     assert tasks[0]["service_id"] == str(service_id)
     assert tasks[0]["title"] == "Analyse fiscale"
+
+
+def test_employee_created_task_notifies_the_local_admin(
+    client, db, make_token, make_user, make_company
+):
+    company = make_company("Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    employee = make_user("local_employee", "acme-employee", company["_id"])
+    _login(client, make_token, employee)
+
+    response = client.post(
+        "/api/tasks/", json={"title": "Classer les dossiers", "description": "Archiver 2025"}
+    )
+
+    assert response.status_code == 201
+    task_id = ObjectId(response.get_json()["_id"])
+    notification = db.notifications.find_one(
+        {"user_id": admin["_id"], "type": "task_validation"}
+    )
+    assert notification is not None
+    assert notification["task_id"] == task_id
+    assert notification["company_id"] == company["_id"]
+    assert notification["read"] is False
+    assert "Classer les dossiers" in notification["message"]
+
+
+def test_admin_created_task_sends_no_validation_notification(
+    client, db, make_token, make_user, make_company
+):
+    company = make_company("Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    make_user("local_employee", "acme-employee", company["_id"])
+    _login(client, make_token, admin)
+
+    assert client.post("/api/tasks/", json={"title": "Relire le contrat"}).status_code == 201
+    assert db.notifications.count_documents({"type": "task_validation"}) == 0
+
+
+def test_employee_tasks_page_shows_two_columns_and_the_new_task_button(
+    client, make_token, make_user, make_company
+):
+    company = make_company("Acme", "acme")
+    employee = make_user("local_employee", "acme-employee", company["_id"])
+    _login(client, make_token, employee)
+
+    body = client.get("/tasks").get_data(as_text=True)
+
+    # Only the two reading columns survive; the action buttons are gone.
+    assert "Task Title</th>" in body
+    assert "Description</th>" in body
+    assert "Actions</th>" not in body
+    assert 'colspan="2"' in body
+    # The New task button is declared for the table toolbar, before Export.
+    assert 'id="newTaskBtn"' in body
+    assert "data-table-toolbar" in body
+
+
+def test_local_admin_tasks_page_keeps_the_actions_column(
+    client, make_token, make_user, make_company
+):
+    company = make_company("Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, admin)
+
+    body = client.get("/tasks").get_data(as_text=True)
+
+    assert "Actions</th>" in body
+    assert 'id="newTaskBtn"' in body
+    assert "data-table-toolbar" in body

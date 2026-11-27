@@ -7,11 +7,13 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 from app.database import get_db
 from app.models.task import TaskCreate, TaskResponse, TaskUpdate
 from app.services.audit_service import AuditService
+from app.socketio_server import notify_badge_update, notify_user
 from app.tenancy import (
     company_scope,
     current_company_id,
     current_user_id,
     is_customer,
+    is_local_employee,
     local_admin_required,
     local_staff_required,
     to_object_id,
@@ -19,6 +21,42 @@ from app.tenancy import (
 from app.utils.localize import localize_task
 
 tasks_bp = Blueprint("tasks", __name__, url_prefix="/api/tasks")
+
+
+def _notify_local_admins(db, task, task_id):
+    """An employee's new task waits for a local admin to validate it."""
+    now = datetime.now(timezone.utc)
+    creator = db.users.find_one({"_id": to_object_id(current_user_id())}) or {}
+    creator_name = creator.get("full_name") or creator.get("username") or "An employee"
+    message = f"{creator_name} added the task '{task['title']}' and it needs your validation."
+
+    for admin in db.users.find({"company_id": task["company_id"], "role": "local_admin"}):
+        notif_id = db.notifications.insert_one(
+            {
+                "user_id": admin["_id"],
+                "company_id": task["company_id"],
+                "type": "task_validation",
+                "title": "Task needs validation",
+                "message": message,
+                "task_id": task_id,
+                "read": False,
+                "created_at": now,
+            }
+        ).inserted_id
+
+        notify_user(
+            str(admin["_id"]),
+            {
+                "_id": str(notif_id),
+                "type": "task_validation",
+                "title": "Task needs validation",
+                "message": message,
+                "task_id": str(task_id),
+                "read": False,
+                "created_at": now.isoformat(),
+            },
+        )
+        notify_badge_update(str(admin["_id"]))
 
 
 @tasks_bp.route("/", methods=["POST"])
@@ -57,6 +95,10 @@ def create_task():
         performed_by=current_user_id(),
         description=f"Task '{task_data.title}' created",
     )
+
+    # A local admin validates the tasks their employees add.
+    if is_local_employee():
+        _notify_local_admins(db, task_dict, result.inserted_id)
 
     return jsonify(TaskResponse(**localize_task(task_dict)).model_dump(by_alias=True)), 201
 

@@ -7,29 +7,29 @@
     <h4 class="mb-0"><i class="bi bi-list-task me-2"></i>
         {% if user.role == 'customer' %}{{ _('my_tasks') }}{% else %}{{ _('task_list') }}{% endif %}
     </h4>
-    <div class="d-flex gap-2">
-        {% if user.role == 'local_admin' %}
-        <a href="/tasks/create" class="btn btn-cse btn-sm">
-            <i class="bi bi-plus-lg me-1"></i>{{ _('create_task') }}
-        </a>
-        {% endif %}
-    </div>
 </div>
 
 <div class="card">
     <div class="card-body">
+        <!-- Moved by table_search.js into the table toolbar, just before Export. -->
+        <a href="/tasks/create" id="newTaskBtn" class="btn btn-sm btn-cse d-none ms-2"
+           data-table-toolbar title="{{ _('create_task') }}">
+            <i class="bi bi-plus-lg me-1"></i>{{ _('create_task') }}
+        </a>
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('task_title') }}</th>
                         <th>{{ _('task_description') }}</th>
+                        {% if user.role != 'local_employee' %}
                         <th>{{ _('actions') }}</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody id="tasksTableBody">
                     <tr>
-                        <td colspan="3" class="text-center text-muted">{{ _('loading') }}</td>
+                        <td colspan="{{ 2 if user.role == 'local_employee' else 3 }}" class="text-center text-muted">{{ _('loading') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -123,7 +123,7 @@ async function loadTasks() {
     const tbody = document.getElementById('tasksTableBody');
 
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">{{ _('no_tasks') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="{{ 2 if user.role == 'local_employee' else 3 }}" class="text-center text-muted">{{ _('no_tasks') }}</td></tr>';
         return;
     }
 
@@ -132,6 +132,7 @@ async function loadTasks() {
         <tr style="cursor:pointer" onclick="openDetail('${t._id}')">
             <td><strong>${t.title}</strong></td>
             <td class="text-muted" style="max-width:420px;white-space:pre-line">${t.description || '-'}</td>
+            {% if user.role != 'local_employee' %}
             <td class="table-actions" onclick="event.stopPropagation()">
                 <button class="btn btn-sm btn-outline-primary" onclick="openEditTask('${t._id}')" title="{{ _('edit_task') }}">
                     <i class="bi bi-pencil"></i>
@@ -142,6 +143,7 @@ async function loadTasks() {
                 </button>
                 {% endif %}
             </td>
+            {% endif %}
         </tr>
     `).join('');
 }

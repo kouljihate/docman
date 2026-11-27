@@ -245,6 +245,21 @@
         return button;
     }
 
+    /**
+     * Page buttons (e.g. "New task") marked with ``data-table-toolbar`` are
+     * moved into the toolbar, right before the Export button.
+     */
+    function placeToolbarButtons(cell, before) {
+        Array.prototype.forEach.call(
+            document.querySelectorAll('[data-table-toolbar]'),
+            function (element) {
+                element.removeAttribute('data-table-toolbar');
+                element.classList.remove('d-none');
+                cell.insertBefore(element, before);
+            }
+        );
+    }
+
     function enhance(table) {
         if (table.dataset.tableSearch === READY) return;
         if (table.closest('.modal') || table.hasAttribute('data-no-search')) return;
@@ -287,6 +302,7 @@
             exportCell.colSpan = spans[2];
             exportCell.style.width = '40%';
             exportCell.className = 'table-toolbar-cell table-toolbar-end';
+            placeToolbarButtons(exportCell, exportButton);
             exportCell.appendChild(exportButton);
 
             row.appendChild(searchCell);
@@ -298,6 +314,7 @@
             cell.colSpan = columns;
             cell.className = 'table-toolbar-cell table-toolbar-inline';
             cell.appendChild(search.bar);
+            placeToolbarButtons(cell, exportButton);
             cell.appendChild(exportButton);
             row.appendChild(cell);
         }

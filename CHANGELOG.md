@@ -4,6 +4,21 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.31.0] - 2026-11-27
+
+### Added
+- PG-TASKS table toolbar: the New task button now sits just before Export
+  (`data-table-toolbar` moves page buttons into the toolbar), for local admins
+  and employees.
+- A task saved by a local employee notifies every local administrator of the
+  company (`task_validation`) so the task can be validated, with an in-app
+  notification and a live badge update.
+
+### Changed
+- A local employee sees only the Task Title and Description columns on
+  PG-TASKS (no Actions column, no edit/delete buttons); rows still open the
+  task detail dialog.
+
 ## [3.30.0] - 2026-11-27
 
 ### Added
