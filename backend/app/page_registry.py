@@ -545,12 +545,15 @@ PAGES = {
         "summary": "In-app notifications of the signed-in user, with mark-as-read, mark-all-read and a composer for staff messages.",
         "features": [
             "Notification list with read state",
+            "New notifications are highlighted in yellow, read ones in green",
+            "Actions column with a round mark-as-read button per unread notification",
             "Mark one / mark all as read",
             "Send notification dialog",
         ],
         "modals": ["sendNotificationModal"],
         "apis": [
             "GET /api/activities/notifications",
+            "POST /api/activities/notifications/<id>/read",
             "POST /api/activities/notifications/read",
             "GET /api/activities/notifications/unread-count",
             "GET /api/users/?role=employee",

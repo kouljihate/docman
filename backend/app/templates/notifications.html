@@ -26,10 +26,11 @@
                         <th>{{ _('message') }}</th>
                         <th>{{ _('created_at') }}</th>
                         <th>{{ _('status') }}</th>
+                        <th class="text-end">{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="notificationsTableBody">
-                    <tr><td colspan="5" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -79,20 +80,35 @@ async function loadNotificationsPage() {
     const data = await apiRequest('/activities/notifications');
     const tbody = document.getElementById('notificationsTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">{{ _('no_notifications') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_notifications') }}</td></tr>';
         return;
     }
     tbody.innerHTML = data.map(n => {
         const typeClass = n.type === 'manual' ? 'primary' : n.type === 'activity_completed' ? 'success' : n.type === 'activity_accepted' ? 'info' : 'secondary';
+        // New notifications keep the row yellow until they are read, then green.
+        const rowClass = n.read ? 'table-success' : 'table-warning';
         return `
-        <tr class="${n.read ? '' : 'fw-bold'}">
+        <tr class="${rowClass}${n.read ? '' : ' fw-bold'}">
             <td><span class="badge rounded-pill bg-${typeClass}">${n.type}</span></td>
             <td>${n.title}</td>
             <td>${n.message}</td>
             <td><small class="text-muted">${formatDate(n.created_at)}</small></td>
             <td>${n.read ? '<span class="badge rounded-pill bg-secondary">{{ _('read') }}</span>' : '<span class="badge rounded-pill bg-primary">{{ _('new') }}</span>'}</td>
+            <td class="text-end">
+                ${n.read ? '' : `<button class="btn btn-sm btn-outline-success rounded-circle" onclick="markNotificationRead('${n._id}')" title="{{ _('mark_read') }}">
+                    <i class="bi bi-check-lg"></i>
+                </button>`}
+            </td>
         </tr>`;
     }).join('');
+}
+
+async function markNotificationRead(id) {
+    const data = await apiRequest(`/activities/notifications/${id}/read`, { method: 'POST' });
+    if (data && data.ok) {
+        loadNotificationsPage();
+        if (typeof updateNotificationBadge === 'function') updateNotificationBadge();
+    }
 }
 
 async function markAllRead() {

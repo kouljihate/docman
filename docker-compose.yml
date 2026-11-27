@@ -27,7 +27,7 @@ services:
     build:
       context: .
       args:
-        APP_VERSION: ${APP_VERSION:-3.28.2}
+        APP_VERSION: ${APP_VERSION:-3.29.0}
     image: document-manager:${APP_VERSION:-3.28.2}
     restart: unless-stopped
     depends_on:

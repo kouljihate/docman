@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.29.0] - 2026-11-27
+
+### Added
+- `PG-NOTIFICATIONS` has an **Actions** column with a round button that marks a
+  single notification as read through the new
+  `POST /api/activities/notifications/<id>/read` endpoint, scoped to the
+  signed-in user.
+- Notification rows are now colour-coded: a new (unread) notification is shown
+  on a yellow row and turns green once it is read.
+
 ## [3.28.2] - 2026-11-27
 
 ### Fixed

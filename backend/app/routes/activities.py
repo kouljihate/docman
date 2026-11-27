@@ -511,6 +511,26 @@ def mark_notifications_read():
     return jsonify({"ok": True}), 200
 
 
+@activities_bp.route("/notifications/<notification_id>/read", methods=["POST"])
+@jwt_required()
+def mark_notification_read(notification_id):
+    """Mark one notification of the signed-in user as read."""
+    db = get_db()
+    identity = get_jwt_identity()
+    notification_oid = to_object_id(notification_id)
+    if not notification_oid:
+        return jsonify({"error": "Notification not found"}), 404
+
+    result = db.notifications.update_one(
+        {"_id": notification_oid, "user_id": ObjectId(identity)},
+        {"$set": {"read": True}},
+    )
+    if result.matched_count == 0:
+        return jsonify({"error": "Notification not found"}), 404
+
+    return jsonify({"ok": True}), 200
+
+
 @activities_bp.route("/notifications/unread-count", methods=["GET"])
 @jwt_required()
 def unread_notification_count():

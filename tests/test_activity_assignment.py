@@ -96,6 +96,32 @@ def test_assignee_reads_the_activity_notification_through_the_api(
     assert client.get("/api/activities/notifications/unread-count").get_json() == {"count": 1}
 
 
+def test_assignee_marks_one_notification_as_read(client, db, make_token, make_user, make_company):
+    company, admin, employee, customer = _setup(make_company, make_user, db)
+    _login(client, make_token, admin)
+    _create_affair(client, "Dossier notification", customer)
+    activity = db.activities.find_one({"company_id": company["_id"]})
+    client.put(
+        f"/api/activities/{activity['_id']}/assign",
+        json={"assigned_to": str(employee["_id"])},
+    )
+    notification = db.notifications.find_one({"user_id": employee["_id"]})
+
+    # Another user cannot read someone else's notification.
+    _login(client, make_token, customer)
+    assert client.post(f"/api/activities/notifications/{notification['_id']}/read").status_code == 404
+    assert db.notifications.find_one({'_id': notification["_id"]})["read"] is False
+
+    _login(client, make_token, employee)
+    response = client.post(f"/api/activities/notifications/{notification['_id']}/read")
+
+    assert response.status_code == 200, response.get_json()
+    assert response.get_json() == {"ok": True}
+    assert db.notifications.find_one({'_id': notification["_id"]})["read"] is True
+    assert client.get("/api/activities/notifications/unread-count").get_json() == {"count": 0}
+    assert client.get("/api/activities/notifications").get_json()[0]["read"] is True
+
+
 def test_affair_without_service_still_gets_a_pending_activity(
     client, db, make_token, make_user, make_company
 ):
