@@ -11,8 +11,17 @@ def test_extract_cuts_long_clauses_at_a_word_boundary():
     short = extract_short_title(
         "Analyser les risques et proposer des recommandations pour la prise de décision."
     )
-    assert short == "Analyser les risques et proposer"
+    assert short == "Analyser les risques"
     assert len(short) <= 48
+
+
+def test_extract_drops_a_tail_cut_after_a_conjunction():
+    assert extract_short_title(
+        "Assister lors des contrôles fiscaux et préparer les réponses aux demandes."
+    ) == "Assister lors des contrôles fiscaux"
+    assert extract_short_title(
+        "Accompagner la digitalisation et l'amélioration de la qualité des services."
+    ) == "Accompagner la digitalisation"
 
 
 def test_extract_drops_dangling_conjunctions():
@@ -43,7 +52,7 @@ def test_plan_keeps_existing_description_and_short_titles():
         "description": "Rapport final.",
     }
     assert plan_task_change(task) == (
-        "Rédiger un rapport d'étude et présenter",
+        "Rédiger un rapport d'étude",
         "Rédiger un rapport d'étude et présenter les résultats au client.\n\nRapport final.",
     )
     assert plan_task_change({"title": "Assistance", "description": "Long texte."}) is None

@@ -4,6 +4,25 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.22.2] - 2026-11-27
+
+### Changed
+- **PG-TASKS: the long sentence moved to Description, a short title into Task
+  Title**: `migrate_task_titles.py` was applied to every company, so each seeded
+  task whose title was a whole instruction now keeps that sentence in
+  **Description** (above any existing description text) and shows a short label
+  in **Task Title** (3 673 of 3 714 tasks). Tasks whose title was already a
+  label, or whose description already held the sentence, are left untouched.
+- The short-title extraction now also drops a tail cut off after a conjunction,
+  so "Assister lors des contrôles fiscaux et préparer" becomes "Assister lors
+  des contrôles fiscaux".
+- The tasks table renders the description over several lines instead of
+  truncating it to one 300 px line, so the moved sentence stays readable.
+
+### Added
+- `migrate_task_titles.py` writes in bulk (`--batch-size`, default 200) and can
+  be silenced with `--quiet`; both remain idempotent.
+
 ## [3.22.1] - 2026-11-26
 
 ### Changed

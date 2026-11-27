@@ -131,7 +131,7 @@ async function loadTasks() {
     tbody.innerHTML = data.map(t => `
         <tr style="cursor:pointer" onclick="openDetail('${t._id}')">
             <td><strong>${t.title}</strong></td>
-            <td class="text-muted text-truncate" style="max-width:300px">${t.description || '-'}</td>
+            <td class="text-muted" style="max-width:420px;white-space:pre-line">${t.description || '-'}</td>
             <td class="table-actions" onclick="event.stopPropagation()">
                 <button class="btn btn-sm btn-outline-primary" onclick="openEditTask('${t._id}')" title="{{ _('edit_task') }}">
                     <i class="bi bi-pencil"></i>

@@ -16,6 +16,9 @@ MIN_WORDS = 2
 # A clause ends at a comma, semicolon, colon, bracket, dash or slash.
 _CLAUSE_BREAK = re.compile(r"[,;:(\[\u2013\u2014]|\s+-\s+|\s+/\s+|\s*\|\s*")
 
+# Conjunctions that leave an unfinished tail when the character limit hits.
+_OPEN_TAIL_CONJUNCTIONS = {"et", "ou", "puis", "ainsi", "and", "or"}
+
 # Words a short title should not end on.
 _TRAILING_STOPWORDS = {
     "de", "des", "du", "d'", "d’", "le", "la", "les", "l'", "l’",
@@ -24,6 +27,18 @@ _TRAILING_STOPWORDS = {
     "lorsque", "lorsqu'", "lorsqu’", "quand", "si", "afin", "car",
     "the", "a", "an", "of", "and", "or", "for", "with", "to", "in", "on",
 }
+
+
+def _drop_open_tail(text):
+    """Drop a cut-off tail such as "et preparer" left by the length limit."""
+    words = text.split()
+    for index in range(len(words) - 1, 0, -1):
+        if words[index].lower() in _OPEN_TAIL_CONJUNCTIONS:
+            head = " ".join(words[:index]).rstrip(" ,;:-\u2013\u2014")
+            if len(head.split()) >= MIN_WORDS and len(head) >= 12:
+                return head
+            return text
+    return text
 
 
 def _trim_trailing_stopwords(text):
@@ -52,7 +67,7 @@ def extract_short_title(text, max_chars=MAX_TITLE_CHARS):
         cut = candidate[:max_chars]
         if " " in cut:
             cut = cut.rsplit(" ", 1)[0]
-        candidate = cut
+        candidate = _drop_open_tail(cut)
 
     candidate = _trim_trailing_stopwords(candidate).rstrip(" ,;:-\u2013\u2014")
     if not candidate:

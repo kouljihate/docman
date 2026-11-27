@@ -11,7 +11,9 @@ Run it against the database the application uses:
 
 It is idempotent: tasks whose title is already short are skipped, so running it
 twice changes nothing. ``--company`` limits the migration to one company;
-``--max-chars`` changes the target title length.
+``--max-chars`` changes the target title length, ``--batch-size`` the number of
+writes per bulk request and ``--quiet`` prints only the summary (useful for
+thousands of rows).
 """
 import argparse
 import sys
@@ -21,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from bson import ObjectId
+from pymongo import UpdateOne
 
 from app.database import get_db
 from app.utils.task_title import MAX_TITLE_CHARS, plan_task_change
@@ -49,6 +52,10 @@ def main():
     parser.add_argument("--company", help="company name, code or id")
     parser.add_argument("--max-chars", type=int, default=MAX_TITLE_CHARS,
                         help=f"maximum short title length (default {MAX_TITLE_CHARS})")
+    parser.add_argument("--batch-size", type=int, default=200,
+                        help="writes per bulk request (default 200)")
+    parser.add_argument("--quiet", action="store_true",
+                        help="only print the summary")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the changes without writing them")
     args = parser.parse_args()
@@ -58,16 +65,24 @@ def main():
     now = datetime.now(timezone.utc)
 
     updated = skipped = 0
+    pending = []
+
+    def flush():
+        if pending and not args.dry_run:
+            db.tasks.bulk_write(pending, ordered=False)
+        pending.clear()
+
     for task in db.tasks.find(query, {"title": 1, "description": 1}):
         change = plan_task_change(task, max_chars=args.max_chars)
         if not change:
             skipped += 1
             continue
         short, description = change
-        print(f"- {task.get('title')}")
-        print(f"+ {short}")
-        if not args.dry_run:
-            db.tasks.update_one(
+        if not args.quiet:
+            print(f"- {task.get('title')}")
+            print(f"+ {short}")
+        pending.append(
+            UpdateOne(
                 {"_id": task["_id"]},
                 {
                     "$set": {
@@ -77,7 +92,11 @@ def main():
                     }
                 },
             )
+        )
         updated += 1
+        if len(pending) >= args.batch_size:
+            flush()
+    flush()
 
     verb = "would be" if args.dry_run else "were"
     print(f"\n{updated} task(s) {verb} shortened, {skipped} already short.")
