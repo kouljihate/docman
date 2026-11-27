@@ -4,6 +4,19 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.32.0] - 2026-11-27
+
+### Added
+- **Customers** entry in the local-employee navigation, between Tasks and
+  Documents.
+- Local employees can open the customer directory and each customer's detail
+  page in read-only mode: view button per row, no create, bulk import, edit or
+  delete controls.
+
+### Changed
+- `GET /api/customers/` now accepts local employees (still scoped to their own
+  company); create, update, delete and bulk import remain local-admin only.
+
 ## [3.31.0] - 2026-11-27
 
 ### Added

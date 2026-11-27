@@ -328,10 +328,11 @@ PAGES = {
         "route": "/customers",
         "layout": "dashboard",
         "template": "customers.html",
-        "roles": ["local_admin"],
-        "summary": "Customer directory of the current company, with photo ID, phone, status and a per-customer affair count.",
+        "roles": ["local_admin", "local_employee"],
+        "summary": "Customer directory of the current company, with photo ID, phone, status and a per-customer affair count. A local employee reads it and opens the customer detail page; create, edit, delete and bulk import stay with the local admin.",
         "features": [
             "Search over the whole customer directory, with the matches paged ten at a time",
+            "Read-only view for a local employee (view button per row, no create/edit/delete/bulk import)",
             "Create / edit customer dialog (identity, CIN, photo, status)",
             "CSV bulk import",
             "Circular view, history, edit and delete buttons per row",
@@ -380,7 +381,7 @@ PAGES = {
         "route": "/customers/<customer_id>",
         "layout": "dashboard",
         "template": "customer_detail.html",
-        "roles": ["local_admin"],
+        "roles": ["local_admin", "local_employee"],
         "summary": "Everything about one customer: profile, photo ID, their affairs and the tasks attached to them.",
         "features": [
             "Customer profile summary",

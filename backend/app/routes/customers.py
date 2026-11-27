@@ -10,13 +10,16 @@ from app.models.user import UserCreate, UserResponse
 from app.services.audit_service import AuditService
 from app.tenancy import (
     CUSTOMER,
-    admin_required,
+    LOCAL_ADMIN,
+    LOCAL_EMPLOYEE,
+    MAIN_ADMIN,
     company_scope,
     current_company_id,
     current_user_id,
     is_customer,
     is_main_admin,
     local_admin_required,
+    role_required,
     to_object_id,
 )
 
@@ -29,9 +32,14 @@ def _customer_query(extra=None):
     return query
 
 
+# Employees read the directory (their pages look customers up); only admins
+# may change it.
+customers_read_required = role_required(MAIN_ADMIN, LOCAL_ADMIN, LOCAL_EMPLOYEE)
+
+
 @customers_bp.route("/", methods=["GET"])
 @jwt_required()
-@admin_required
+@customers_read_required
 def list_customers():
     db = get_db()
     extra = None

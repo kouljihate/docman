@@ -337,12 +337,12 @@ def create_app():
         return render_template("messaging.html", active_page="messaging")
 
     @app.route("/customers")
-    @page_roles(LOCAL_ADMIN)
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def customers_page():
         return render_template("customers.html", active_page="customers")
 
     @app.route("/customers/<customer_id>")
-    @page_roles(LOCAL_ADMIN)
+    @page_roles(LOCAL_ADMIN, LOCAL_EMPLOYEE)
     def customer_detail_page(customer_id):
         return render_template("customer_detail.html", active_page="customers", customer_id=customer_id)
 

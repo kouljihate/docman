@@ -58,7 +58,10 @@ def test_employee_cannot_manage_customers(client, make_token, make_user, make_co
     company = make_company()
     employee = make_user("local_employee", "emp", company["_id"])
     _login(client, make_token, employee)
-    assert client.get("/api/customers/").status_code == 403
+    # Employees read the directory (their menu has it) but never change it.
+    assert client.get("/api/customers/").status_code == 200
+    assert client.post("/api/customers/", json={}).status_code == 403
+    assert client.delete("/api/customers/000000000000000000000000").status_code == 403
     assert client.get("/api/companies/").status_code == 403
 
 
