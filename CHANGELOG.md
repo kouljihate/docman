@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.27.1] - 2026-11-27
+
+### Changed
+- PG-SERVICES table: the Description column is gone (the text stays in the
+  create/edit dialog), and the Status, Tasks, Created At and Actions columns are
+  centred, headers included.
+
 ## [3.27.0] - 2026-11-27
 
 ### Added

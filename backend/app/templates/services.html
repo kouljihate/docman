@@ -17,16 +17,15 @@
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('service_name') }}</th>
-                        <th>{{ _('service_description') }}</th>
                         <th>{{ _('service_price') }}</th>
-                        <th>{{ _('status') }}</th>
-                        <th>{{ _('tasks') }}</th>
-                        <th>{{ _('created_at') }}</th>
-                        <th>{{ _('actions') }}</th>
+                        <th class="text-center">{{ _('status') }}</th>
+                        <th class="text-center">{{ _('tasks') }}</th>
+                        <th class="text-center">{{ _('created_at') }}</th>
+                        <th class="text-center">{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="servicesTableBody">
-                    <tr><td colspan="7" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -182,7 +181,7 @@ async function loadServices() {
     const data = await apiRequest('/services/');
     const tbody = document.getElementById('servicesTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">{{ _('no_services') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_services') }}</td></tr>';
         return;
     }
     serviceTasksCache = {};
@@ -202,12 +201,11 @@ async function loadServices() {
         return `
         <tr>
             <td><strong>${s.name}</strong></td>
-            <td>${s.description || '-'}</td>
             <td dir="ltr">${formatPrice(s.price)}</td>
-            <td><span class="badge rounded-pill bg-${s.is_active ? 'success' : 'danger'}">${s.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
-            <td><span class="badge rounded-pill bg-info" style="cursor:pointer" onclick="toggleServiceTasks('${s._id}')">${taskCount} ${taskCount === 1 ? '{{ _('task') }}' : '{{ _('tasks') }}'}</span></td>
-            <td dir="ltr"><small class="text-muted">${formatDate(s.created_at)}</small></td>
-            <td class="table-actions">
+            <td class="text-center"><span class="badge rounded-pill bg-${s.is_active ? 'success' : 'danger'}">${s.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
+            <td class="text-center"><span class="badge rounded-pill bg-info" style="cursor:pointer" onclick="toggleServiceTasks('${s._id}')">${taskCount} ${taskCount === 1 ? '{{ _('task') }}' : '{{ _('tasks') }}'}</span></td>
+            <td class="text-center" dir="ltr"><small class="text-muted">${formatDate(s.created_at)}</small></td>
+            <td class="table-actions text-center">
                 <button class="btn btn-sm btn-outline-primary" onclick="editService('${s._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -217,7 +215,7 @@ async function loadServices() {
             </td>
         </tr>
         <tr id="tasks-${s._id}" style="display:none">
-            <td colspan="7" style="padding:0">
+            <td colspan="6" style="padding:0">
                 <div class="p-3 bg-light">
                     <strong>{{ _('tasks') }}</strong>
                     ${st.length === 0 ? '<p class="text-muted mb-0">{{ _('no_tasks') }}</p>' :
