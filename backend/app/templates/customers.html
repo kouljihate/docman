@@ -25,12 +25,11 @@
                         <th>{{ _('phone') }}</th>
                         <th>{{ _('affairs_count') }}</th>
                         <th>{{ _('status') }}</th>
-                        <th>{{ _('total_customer_tasks') }}</th>
                         <th>{{ _('actions') }}</th>
                     </tr>
                 </thead>
                 <tbody id="customersTableBody">
-                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="5" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -158,7 +157,7 @@ async function loadCustomers() {
     const data = await apiRequest('/customers/');
     const tbody = document.getElementById('customersTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
         return;
     }
     customersData = data;
@@ -171,7 +170,6 @@ async function loadCustomers() {
             <td>${c.phone || '-'}</td>
             <td class="text-center"><span class="badge bg-info">${c.affair_count || 0}</span></td>
             <td class="text-center"><span class="badge bg-${c.is_active ? 'success' : 'danger'}">${c.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>
-            <td class="text-center"><span class="badge bg-info">${c.task_stats?.total || 0}</span></td>
             <td class="table-actions text-center">
                 <a class="btn btn-sm btn-outline-secondary" href="/customers/${c._id}" title="{{ _('view') }}">
                     <i class="bi bi-eye"></i>

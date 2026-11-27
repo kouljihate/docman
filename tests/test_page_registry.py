@@ -130,7 +130,7 @@ def test_customers_actions_include_view_and_history(client, make_token, make_use
     body = client.get("/customers").get_data(as_text=True)
 
     # Action column rounds every button; each row offers view and history.
-    assert 'class="table-actions"' in body
+    assert 'class="table-actions text-center"' in body
     assert "/customers/${c._id}" in body
     assert "bi bi-eye" in body
     assert "showCustomerHistory(" in body

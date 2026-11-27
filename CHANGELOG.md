@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.6] - 2026-11-27
+
+### Changed
+- **PG-CUSTOMERS drops the Total tasks column**: the directory now lists full
+  name, phone, affairs, status and actions. The per-customer task count is still
+  computed by the customers API.
+
 ## [3.26.5] - 2026-11-27
 
 ### Changed
