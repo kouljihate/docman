@@ -808,16 +808,36 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     }
 }
 
-/* Search row carried by every data table (static/js/table_search.js). */
+/* Toolbar row carried by every data table (static/js/table_search.js):
+   search | spacer | export, on a 40% / 20% / 40% split. */
 .table-search-row > td {
     padding: 0.5rem 0.75rem;
     background: rgba(0, 0, 0, 0.02);
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    vertical-align: middle;
+}
+
+.table-toolbar-gap {
+    background: transparent;
+}
+
+.table-toolbar-end {
+    text-align: right;
+}
+
+[dir="rtl"] .table-toolbar-end {
+    text-align: left;
+}
+
+.table-toolbar-inline {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .table-search-bar {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .table-search-group {
@@ -829,6 +849,33 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
     min-width: 0;
 }
 
+/* Rounded search field. */
+.table-search-group .input-group-text {
+    border-radius: 50rem 0 0 50rem;
+}
+
+.table-search-group .form-control {
+    border-radius: 0 50rem 50rem 0;
+}
+
+[dir="rtl"] .table-search-group .input-group-text {
+    border-radius: 0 50rem 50rem 0;
+}
+
+[dir="rtl"] .table-search-group .form-control {
+    border-radius: 50rem 0 0 50rem;
+}
+
 .table-search-input::-webkit-search-cancel-button {
     cursor: pointer;
+}
+
+.table-export-btn {
+    border-radius: 50rem;
+    white-space: nowrap;
+}
+
+/* The toolbar row is left out of the PDF capture. */
+.table-exporting .table-search-row {
+    display: none !important;
 }

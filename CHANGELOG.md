@@ -4,6 +4,21 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.0] - 2026-11-27
+
+### Added
+- **CSV and PDF export for every table**: the toolbar row of each table now ends
+  with an Export button that opens `#tableExportModal` and asks for CSV or PDF.
+  CSV is written with a UTF-8 BOM so accents and Arabic stay readable in Excel;
+  PDF rasterises the table through html2canvas/jsPDF (loaded on demand) and
+  slices it over A4 landscape pages, which keeps the Arabic glyphs intact. Both
+  formats export the rows currently shown, so the search filter applies.
+
+### Changed
+- The table toolbar row is split in three columns (40% / 20% / 40%): the search
+  field on the left, an empty spacer in the middle and Export on the right. The
+  search field and the Export button now have rounded corners.
+
 ## [3.25.0] - 2026-11-27
 
 ### Added

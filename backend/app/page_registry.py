@@ -10,7 +10,7 @@ Modals are keyed by their DOM element id and identified by ``MDL-...``.
 
 # Dialog rendered by ``base.html``: the footer settings icon opens it on every
 # page, signed in or not.
-BASE_MODALS = ("settingsModal",)
+BASE_MODALS = ("settingsModal", "tableExportModal")
 
 # Dialogs that live in ``dashboard_base.html`` and therefore appear on every
 # dashboard-backed page.
@@ -28,6 +28,12 @@ MODALS = {
         "element": "settingsModal",
         "title": "Settings",
         "purpose": "Opened by the gear icon in the shared footer; picks the interface language and applies it through GET /set-language.",
+    },
+    "tableExportModal": {
+        "id": "MDL-TABLE-EXPORT",
+        "element": "tableExportModal",
+        "title": "Table export",
+        "purpose": "Opened by the Export button of every data table; picks CSV or PDF before downloading the rows currently shown.",
     },
     "sidebarOffcanvas": {
         "id": "PNL-SIDEBAR",
