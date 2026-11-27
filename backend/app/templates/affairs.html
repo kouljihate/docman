@@ -118,6 +118,28 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="assignAffairModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>{{ _('assign_affair') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignAffairId">
+                <p class="text-muted small">{{ _('assign_affair_hint') }}</p>
+                <label class="form-label">{{ _('assigned_to') }}</label>
+                <select id="assignAffairSelect" class="form-select"></select>
+                <div id="assignAffairError" class="alert alert-danger d-none mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                <button type="button" class="btn btn-cse" onclick="saveAffairAssignment()">{{ _('save') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}
@@ -216,7 +238,18 @@ async function loadAffairs() {
                 <button class="btn btn-sm btn-outline-info" onclick="generateActivities('${a._id}')" title="{{ _('generate_activities') }}">
                     <i class="bi bi-magic"></i>
                 </button>`;
-        const actions = `${generateButton}
+        // An assigned affair keeps its assignee (editable in the affair dialog),
+        // so the quick assign button is only offered on unassigned rows.
+        const assignButton = a.assigned_to
+            ? `
+                <button class="btn btn-sm btn-outline-success rounded-circle" disabled title="{{ _('affair_already_assigned') }}">
+                    <i class="bi bi-person-plus"></i>
+                </button>`
+            : `
+                <button class="btn btn-sm btn-outline-success rounded-circle" onclick="openAssignAffairModal('${a._id}')" title="{{ _('assign_affair') }}">
+                    <i class="bi bi-person-plus"></i>
+                </button>`;
+        const actions = `${assignButton}${generateButton}
                 <button class="btn btn-sm btn-outline-primary" onclick="editAffair('${a._id}')" title="{{ _('edit') }}">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -237,6 +270,49 @@ async function loadAffairs() {
             <td class="table-actions">${actions}</td>
         </tr>`;
     }).join('');
+}
+
+async function openAssignAffairModal(id) {
+    const affair = affairsData.find(x => x._id === id);
+    if (!affair || affair.assigned_to) return;
+    // The platform admin carries no company, so its choices come from the
+    // affair's own company.
+    if (isMainAdmin) {
+        await loadAffairOptions(affair.company_id);
+    }
+    const select = document.getElementById('assignAffairSelect');
+    select.innerHTML = affairAssignees.map(u => {
+        const label = u.role === 'local_admin'
+            ? `${u.full_name} ({{ _('local_manager') }})`
+            : `${u.full_name} ({{ _('employee') }})`;
+        return `<option value="${u._id}">${label}</option>`;
+    }).join('') || `<option value="">{{ _('no_assignees_available') }}</option>`;
+    document.getElementById('assignAffairId').value = id;
+    document.getElementById('assignAffairError').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('assignAffairModal')).show();
+}
+
+async function saveAffairAssignment() {
+    const id = document.getElementById('assignAffairId').value;
+    const assignedTo = document.getElementById('assignAffairSelect').value;
+    const errorEl = document.getElementById('assignAffairError');
+    if (!assignedTo) {
+        errorEl.textContent = '{{ _('select_assignee') }}';
+        errorEl.classList.remove('d-none');
+        return;
+    }
+    const data = await apiRequest(`/affairs/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ assigned_to: assignedTo }),
+    });
+    if (data && data._id) {
+        bootstrap.Modal.getInstance(document.getElementById('assignAffairModal')).hide();
+        showToast('{{ _('assign_affair') }}');
+        loadAffairs();
+    } else {
+        errorEl.textContent = (data && data.error) || 'Error';
+        errorEl.classList.remove('d-none');
+    }
 }
 
 function openCreateModal() {

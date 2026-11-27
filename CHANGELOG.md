@@ -4,6 +4,20 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.28.0] - 2026-11-27
+
+### Added
+- PG-AFFAIRS: a circular assign button in the Actions column opens the new
+  `#assignAffairModal` (`MDL-ASSIGN-AFFAIR`) listing the company's local managers
+  and employees (`GET /api/users/assignees`). Saving calls
+  `PUT /api/affairs/<id>` with the chosen `assigned_to`, which also hands the
+  affair's waiting activities to that person.
+
+### Changed
+- The assign button is disabled with an explanatory tooltip once the affair
+  already has an assignee; changing the assignee stays possible through the
+  affair edit dialog.
+
 ## [3.27.2] - 2026-11-27
 
 ### Changed

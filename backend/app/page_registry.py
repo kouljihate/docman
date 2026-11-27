@@ -35,6 +35,12 @@ MODALS = {
         "title": "Table export",
         "purpose": "Opened by the Export button of every data table; picks CSV or PDF before downloading the rows currently shown.",
     },
+    "assignAffairModal": {
+        "id": "MDL-ASSIGN-AFFAIR",
+        "element": "assignAffairModal",
+        "title": "Assign affair",
+        "purpose": "Local admin dialog assigning an unassigned affair to a local manager or employee through PUT /api/affairs/<id>, which also hands its waiting activities over.",
+    },
     "customerInfoModal": {
         "id": "MDL-CUSTOMER-INFO",
         "element": "customerInfoModal",
@@ -366,12 +372,13 @@ PAGES = {
         "summary": "Affairs per company, each with a readable reference (A + YYMMDD-HHMM), its customer, services, assignee and generated activity counters. A local admin sees their own company; the platform admin sees every company, filterable with ?company=<id>, and can edit or delete any row.",
         "features": [
             "Affair table with reference, flanked by the company column on the platform admin's view",
+            "Circular assign button per unassigned row, opening the assign dialog (local manager or employee); disabled once the affair has an assignee",
             "Circular edit and delete buttons per row, for the local admin and for every company's rows on the platform view",
             "Platform view across all companies, filterable per company",
             "Create / edit affair dialog (services, assignee)",
             "Automatic activity generation per attached service",
         ],
-        "modals": ["affairModal"],
+        "modals": ["affairModal", "assignAffairModal"],
         "apis": [
             "GET /api/affairs/",
             "GET /api/affairs/?company_id=<id>",
