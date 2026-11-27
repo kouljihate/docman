@@ -4,6 +4,13 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.2] - 2026-11-27
+
+### Changed
+- **Every badge inside a table has rounded corners**: status, counter and label
+  badges use the same pill radius and padding across all tables, including the
+  ones built without the `rounded-pill` class.
+
 ## [3.26.1] - 2026-11-27
 
 ### Changed

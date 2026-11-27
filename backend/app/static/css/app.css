@@ -879,3 +879,11 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 .table-exporting .table-search-row {
     display: none !important;
 }
+
+/* Every badge shown inside a table keeps rounded corners, whatever the
+   markup used in the row templates. */
+.table .badge {
+    border-radius: 50rem;
+    padding: 0.4em 0.7em;
+    font-weight: 600;
+}
