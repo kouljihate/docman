@@ -174,6 +174,7 @@
                         <div class="col-md-6">
                             <label class="form-label">{{ _('password') }}</label>
                             <input type="password" class="form-control" name="admin_password" minlength="6">
+                            <div class="form-text d-none" id="adminPasswordHint">{{ _('password_keep_hint') }}</div>
                         </div>
                     </div>
                     </div>
@@ -316,6 +317,7 @@ function openCompanyModal() {
     resetCompanyForm();
     document.getElementById('companyModalTitle').textContent = '{{ _('create_company') }}';
     document.getElementById('companyAdminSection').classList.remove('d-none');
+    document.getElementById('adminPasswordHint').classList.add('d-none');
     new bootstrap.Modal(document.getElementById('companyModal')).show();
 }
 
@@ -338,8 +340,15 @@ async function editCompany(id) {
         preview.src = data.logo;
         preview.classList.remove('d-none');
     }
-    // The first local admin is only created with the company.
-    document.getElementById('companyAdminSection').classList.add('d-none');
+    // The local admin account is edited with the same fields as when the
+    // company is created; a blank password keeps the current one.
+    const admin = data.admin || (data.admins && data.admins[0]) || null;
+    form.admin_full_name.value = (admin && admin.full_name) || '';
+    form.admin_username.value = (admin && admin.username) || '';
+    form.admin_email.value = (admin && admin.email) || '';
+    form.admin_password.value = '';
+    document.getElementById('companyAdminSection').classList.remove('d-none');
+    document.getElementById('adminPasswordHint').classList.toggle('d-none', !admin);
     document.getElementById('companyModalTitle').textContent = '{{ _('edit_company') }}';
     new bootstrap.Modal(document.getElementById('companyModal')).show();
 }
@@ -382,6 +391,11 @@ async function saveCompany(e) {
         website: form.website.value.trim(),
     };
 
+    payload.admin_full_name = form.admin_full_name.value.trim() || null;
+    payload.admin_username = form.admin_username.value.trim() || null;
+    payload.admin_email = form.admin_email.value.trim() || null;
+    payload.admin_password = form.admin_password.value || null;
+
     let data;
     if (editingCompanyId) {
         data = await apiRequest(`/companies/${editingCompanyId}`, {
@@ -389,10 +403,6 @@ async function saveCompany(e) {
             body: JSON.stringify(payload),
         });
     } else {
-        payload.admin_full_name = form.admin_full_name.value.trim() || null;
-        payload.admin_username = form.admin_username.value.trim() || null;
-        payload.admin_email = form.admin_email.value.trim() || null;
-        payload.admin_password = form.admin_password.value || null;
         data = await apiRequest('/companies/', { method: 'POST', body: JSON.stringify(payload) });
     }
     btn.disabled = false;

@@ -71,3 +71,68 @@ def test_company_counts_come_from_one_aggregation(client, db, make_token, make_u
     other_row = items["Other"]
     assert (other_row["admins_count"], other_row["customers_count"], other_row["affairs_count"]) == (0, 1, 1)
     assert (other_row["documents_count"], other_row["tasks_count"]) == (0, 0)
+
+
+def test_company_detail_exposes_its_local_admin(client, db, make_token, make_user):
+    root = make_user("main_admin", "root")
+    company = _company(db, "Acme", "acme")
+    make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, root)
+
+    detail = client.get(f"/api/companies/{company['_id']}").get_json()
+    assert detail["admin"]["username"] == "acme-admin"
+    assert detail["admins"][0]["username"] == "acme-admin"
+
+
+def test_company_edit_updates_the_local_admin(client, db, make_token, make_user):
+    from bcrypt import checkpw
+
+    root = make_user("main_admin", "root")
+    company = _company(db, "Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    _login(client, make_token, root)
+
+    response = client.put(
+        f"/api/companies/{company['_id']}",
+        json={
+            "admin_full_name": "New Name",
+            "admin_username": "acme-new",
+            "admin_email": "new-admin@example.com",
+            "admin_password": "secret123",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["admin"]["username"] == "acme-new"
+
+    stored = db.users.find_one({"_id": admin["_id"]})
+    assert stored["username"] == "acme-new"
+    assert stored["full_name"] == "New Name"
+    assert stored["email"] == "new-admin@example.com"
+    assert checkpw(b"secret123", stored["password"].encode("utf-8"))
+
+
+def test_company_edit_keeps_the_password_when_it_is_not_sent(client, db, make_token, make_user):
+    root = make_user("main_admin", "root")
+    company = _company(db, "Acme", "acme")
+    admin = make_user("local_admin", "acme-admin", company["_id"])
+    before = db.users.find_one({"_id": admin["_id"]})["password"]
+    _login(client, make_token, root)
+
+    response = client.put(f"/api/companies/{company['_id']}", json={"admin_full_name": "Renamed"})
+
+    assert response.status_code == 200
+    assert db.users.find_one({"_id": admin["_id"]})["password"] == before
+
+
+def test_company_edit_rejects_an_admin_username_already_taken(client, db, make_token, make_user):
+    root = make_user("main_admin", "root")
+    company = _company(db, "Acme", "acme")
+    make_user("local_admin", "acme-admin", company["_id"])
+    make_user("local_admin", "other-admin", None)
+    _login(client, make_token, root)
+
+    response = client.put(f"/api/companies/{company['_id']}", json={"admin_username": "other-admin"})
+
+    assert response.status_code == 409
+    assert db.users.find_one({"username": "acme-admin"}) is not None

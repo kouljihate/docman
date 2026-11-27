@@ -240,7 +240,7 @@ PAGES = {
         "features": [
             "Company table with logo, legal identifiers, status and an affairs counter that links to that company's affairs",
             "Create company dialog (profile, ICE/RC/IF, contact, social links)",
-            "Edit company profile from the circular action buttons of each row",
+            "Edit company profile and its local admin account (full name, username, email, password) from the circular action buttons of each row",
             "Activate / deactivate and delete a tenant",
         ],
         "modals": ["companyModal"],

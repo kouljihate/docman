@@ -149,6 +149,13 @@ class CompanyUpdate(_CompanyProfileValidators):
     social_links: Optional[Dict[str, str]] = None
     is_active: Optional[bool] = None
 
+    # Local admin account edited with the company (the password is only
+    # replaced when one is sent).
+    admin_username: Optional[str] = Field(default=None, min_length=3, max_length=50)
+    admin_email: Optional[EmailStr] = None
+    admin_password: Optional[str] = Field(default=None, min_length=6)
+    admin_full_name: Optional[str] = None
+
 
 class CompanyAdminCreate(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)

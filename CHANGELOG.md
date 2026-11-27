@@ -4,6 +4,24 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.25.0] - 2026-11-27
+
+### Added
+- **PG-COMPANIES edit dialog edits the local admin account**: the same fields as
+  the creation form (full name, username, email, password) are now shown and
+  pre-filled when editing a company. Saving updates that company's local admin
+  through `PUT /api/companies/<id>`, which accepts `admin_full_name`,
+  `admin_username`, `admin_email` and `admin_password`; a blank password keeps
+  the current one, and a company without a local admin gets one created.
+- `GET /api/companies/<id>` returns the account created with the company as
+  `admin` (the existing `admins` list is unchanged).
+- `password_keep_hint` translation (en/fr/ar) shown under the password field
+  while editing.
+
+### Fixed
+- The company edit dialog no longer hides the admin section, which left the
+  local administrator of a tenant impossible to correct from the platform.
+
 ## [3.24.0] - 2026-11-27
 
 ### Added

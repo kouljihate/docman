@@ -77,6 +77,7 @@ TRANSLATIONS = {
         # Auth
         "username": "Username",
         "password": "Password",
+        "password_keep_hint": "Leave blank to keep the current password",
         "email": "Email",
         "full_name": "Full Name",
         "phone": "Phone",
@@ -447,6 +448,7 @@ TRANSLATIONS = {
         "select_company": "اختر الشركة",
         "username": "اسم المستخدم",
         "password": "كلمة المرور",
+        "password_keep_hint": "اتركه فارغًا للإبقاء على كلمة المرور الحالية",
         "email": "البريد الإلكتروني",
         "full_name": "الاسم الكامل",
         "phone": "الهاتف",
@@ -808,6 +810,7 @@ TRANSLATIONS = {
         "select_company": "Choisir une entreprise",
         "username": "Nom d'utilisateur",
         "password": "Mot de passe",
+        "password_keep_hint": "Laisser vide pour conserver le mot de passe actuel",
         "email": "Email",
         "full_name": "Nom complet",
         "phone": "Téléphone",

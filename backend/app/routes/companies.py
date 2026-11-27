@@ -123,6 +123,88 @@ def _positive_int_arg(name, default, maximum=None):
     return min(value, maximum) if maximum else value
 
 
+def _first_local_admin(db, company_id):
+    """The administrator created with the company (oldest local admin)."""
+    return db.users.find_one(
+        {"company_id": company_id, "role": LOCAL_ADMIN},
+        sort=[("created_at", 1)],
+    )
+
+
+def _admin_payload(admin):
+    if not admin:
+        return None
+    return {
+        "_id": str(admin["_id"]),
+        "username": admin.get("username"),
+        "email": admin.get("email"),
+        "full_name": admin.get("full_name"),
+    }
+
+
+def _save_company_admin(db, company, fields, now):
+    """Create or update the company's local admin from the company form.
+
+    Returns ``(error, admin)``. Only the fields that were sent are applied, so
+    a blank password keeps the current one and a plain company edit never
+    touches its administrator.
+    """
+    if not fields:
+        return None, None
+
+    username = (fields.get("admin_username") or "").strip()
+    email = str(fields.get("admin_email") or "").strip()
+    full_name = (fields.get("admin_full_name") or "").strip()
+    password = fields.get("admin_password") or ""
+
+    admin = _first_local_admin(db, company["_id"])
+    if not admin and not (username and email and password):
+        return "The local admin needs a username, an email and a password", None
+
+    clashes = []
+    if username:
+        clashes.append({"username": username})
+    if email:
+        clashes.append({"email": email})
+    if clashes:
+        query = {"$or": clashes}
+        if admin:
+            query["_id"] = {"$ne": admin["_id"]}
+        if db.users.find_one(query):
+            return "This username or email is already used by another account", None
+
+    if admin:
+        changes = {"updated_at": now}
+        if username:
+            changes["username"] = username
+        if email:
+            changes["email"] = email
+        if full_name:
+            changes["full_name"] = full_name
+        if password:
+            changes["password"] = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
+        db.users.update_one({"_id": admin["_id"]}, {"$set": changes})
+        admin = db.users.find_one({"_id": admin["_id"]})
+    else:
+        admin_id = db.users.insert_one(
+            {
+                "username": username,
+                "email": email,
+                "password": hashpw(password.encode("utf-8"), gensalt()).decode("utf-8"),
+                "role": LOCAL_ADMIN,
+                "full_name": full_name or username,
+                "phone": None,
+                "is_active": True,
+                "company_id": company["_id"],
+                "created_by": ObjectId(current_user_id()),
+                "created_at": now,
+                "updated_at": now,
+            }
+        ).inserted_id
+        admin = db.users.find_one({"_id": admin_id})
+    return None, _admin_payload(admin)
+
+
 @companies_bp.route("/", methods=["GET"])
 @jwt_required()
 @main_admin_required
@@ -247,6 +329,8 @@ def get_company(company_id):
         {"_id": str(u["_id"]), "username": u["username"], "email": u.get("email"), "full_name": u.get("full_name")}
         for u in db.users.find({"company_id": company["_id"], "role": "local_admin"}).sort("full_name", 1)
     ]
+    # The account created with the company, pre-filled by the edit dialog.
+    data["admin"] = _admin_payload(_first_local_admin(db, company["_id"]))
     return jsonify(data), 200
 
 
@@ -264,11 +348,24 @@ def update_company(company_id):
     except Exception as exc:
         return jsonify({"error": str(exc)}), 400
 
-    update = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
-    if not update:
+    raw = payload.model_dump(exclude_unset=True)
+    admin_fields = {
+        key: raw.pop(key)
+        for key in ("admin_full_name", "admin_username", "admin_email", "admin_password")
+        if key in raw
+    }
+    update = {k: v for k, v in raw.items() if v is not None}
+    if not update and not admin_fields:
         return jsonify({"error": "No fields to update"}), 400
-    update["updated_at"] = datetime.now(timezone.utc)
-    db.companies.update_one({"_id": company["_id"]}, {"$set": update})
+
+    now = datetime.now(timezone.utc)
+    admin_error, admin = _save_company_admin(db, company, admin_fields, now)
+    if admin_error:
+        return jsonify({"error": admin_error}), 409
+
+    if update:
+        update["updated_at"] = now
+        db.companies.update_one({"_id": company["_id"]}, {"$set": update})
 
     AuditService.log(
         action="update",
@@ -278,7 +375,20 @@ def update_company(company_id):
         description=f"Company '{company.get('company_name')}' updated",
         company_id=company["_id"],
     )
-    return jsonify(_serialize(db.companies.find_one({"_id": company["_id"]}), _counts_for(db, company["_id"]))), 200
+    if admin:
+        AuditService.log(
+            action="update",
+            entity_type="user",
+            entity_id=admin["_id"],
+            performed_by=current_user_id(),
+            description=f"Local admin '{admin['username']}' updated for {company.get('company_name')}",
+            company_id=company["_id"],
+        )
+
+    data = _serialize(db.companies.find_one({"_id": company["_id"]}), _counts_for(db, company["_id"]))
+    if admin:
+        data["admin"] = admin
+    return jsonify(data), 200
 
 
 @companies_bp.route("/<company_id>/admins", methods=["POST"])
