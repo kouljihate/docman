@@ -4,6 +4,16 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.24.0] - 2026-11-27
+
+### Added
+- **A search bar on top of every data table**: `static/js/table_search.js`
+  inserts a full-width header row, holding a centred search field, as the first
+  row of each table on every page. Typing filters the table rows live, ignoring
+  case and accents, and rows loaded later by a page script are filtered again
+  automatically. Tables inside dialogs are left untouched, and the field is
+  translated by the interface language.
+
 ## [3.23.1] - 2026-11-27
 
 ### Changed

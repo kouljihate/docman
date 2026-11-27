@@ -22,7 +22,7 @@
     </script>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+<body data-search-placeholder="{{ _('search') }}">
     <div id="app-loader" class="app-loader is-visible" role="status" aria-live="polite" aria-label="{{ _('loading') }}">
         <div class="app-loader-card">
             <svg class="app-loader-spinner" viewBox="0 0 50 50" aria-hidden="true" focusable="false">
@@ -221,6 +221,7 @@
         })();
     </script>
     <script src="/static/js/app.js"></script>
+    <script src="/static/js/table_search.js"></script>
     {% if page_info %}
     <script>
         // Share / copy / screenshot actions of the page-info dialog, next to its
