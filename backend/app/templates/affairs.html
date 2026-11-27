@@ -289,12 +289,6 @@ async function handleAffairSubmit(e) {
     const assignedTo = form.assigned_to.value;
     const generate = !id && document.getElementById('generateActivities').checked;
 
-    if (generate && serviceIds.length && !assignedTo) {
-        errorEl.textContent = '{{ _('affair_requires_assignee') }}';
-        errorEl.classList.remove('d-none');
-        return false;
-    }
-
     const body = {
         name: form.name.value,
         affair_type: form.affair_type.value,

@@ -104,6 +104,29 @@
 
 {% block extra_scripts %}
 <script>
+const STATUS_LABELS = {
+    pending: '{{ _('pending') }}',
+    assigned: '{{ _('assigned') }}',
+    in_progress: '{{ _('in_progress') }}',
+    completed: '{{ _('completed') }}',
+    cancelled: '{{ _('cancelled') }}',
+};
+const STATUS_COLORS = {
+    pending: 'warning',
+    assigned: 'primary',
+    in_progress: 'info',
+    completed: 'success',
+    cancelled: 'danger',
+};
+
+function statusLabel(status) {
+    return STATUS_LABELS[status] || status;
+}
+
+function statusColor(status) {
+    return STATUS_COLORS[status] || 'secondary';
+}
+
 document.addEventListener('DOMContentLoaded', loadEmployeeDashboard);
 
 async function loadEmployeeDashboard() {
@@ -133,7 +156,7 @@ async function loadEmployeeDashboard() {
             data.recent_activities.map(a => `
                 <div class="activity-item">
                     <strong>${a.title}</strong>
-                    <span class="badge bg-${a.status === 'completed' ? 'success' : a.status === 'in_progress' ? 'info' : 'warning'}">${a.status}</span>
+                    <span class="badge bg-${statusColor(a.status)}">${statusLabel(a.status)}</span>
                     <br><small class="text-muted">${formatDate(a.created_at)}</small>
                 </div>
             `).join('') +
@@ -148,12 +171,12 @@ async function loadEmployeeDashboard() {
             <tr>
                 <td><strong>${a.title}</strong></td>
                 <td>${a.customer_name || '-'}</td>
-                <td><span class="badge bg-${a.status === 'completed' ? 'success' : a.status === 'in_progress' ? 'info' : 'warning'}">${a.status}</span></td>
+                <td><span class="badge bg-${statusColor(a.status)}">${statusLabel(a.status)}</span></td>
                 <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
                 <td class="table-actions">
-                    ${a.status === 'pending' ? `
-                        <button class="btn btn-sm btn-outline-info" onclick="quickUpdateStatus('${a._id}','in_progress')" title="{{ _('accept') }}">
-                            <i class="bi bi-check-lg"></i>
+                    ${(a.status === 'pending' || a.status === 'assigned') ? `
+                        <button class="btn btn-sm btn-outline-info" onclick="quickUpdateStatus('${a._id}','in_progress')" title="{{ _('start_activity') }}">
+                            <i class="bi bi-play-fill"></i>
                         </button>
                     ` : ''}
                     ${a.status === 'in_progress' ? `

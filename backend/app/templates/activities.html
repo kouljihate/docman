@@ -99,6 +99,33 @@
 </div>
 {% endif %}
 
+{% if user.role == 'local_admin' %}
+<div class="modal fade" id="assignActivityModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-person-check me-2"></i>{{ _('assign_activity') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="assignActivityForm" onsubmit="return saveAssignment(event)">
+                <div class="modal-body">
+                    <p class="text-muted small mb-3" id="assignActivityTitle"></p>
+                    <label class="form-label">{{ _('assigned_to') }}</label>
+                    <select name="assigned_to" class="form-select">
+                        <option value="">{{ _('unassigned') }}</option>
+                    </select>
+                    <div id="assignActivityError" class="alert alert-danger d-none mt-3"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('cancel') }}</button>
+                    <button type="submit" class="btn btn-cse">{{ _('save') }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="modal fade" id="noteModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -134,10 +161,18 @@ async function loadActivities() {
     tbody.innerHTML = data.map(a => {
         const statusBadge = {
             'pending': 'warning',
+            'assigned': 'primary',
             'in_progress': 'info',
             'completed': 'success',
             'cancelled': 'danger',
         }[a.status] || 'secondary';
+        const statusLabel = {
+            'pending': '{{ _('pending') }}',
+            'assigned': '{{ _('assigned') }}',
+            'in_progress': '{{ _('in_progress') }}',
+            'completed': '{{ _('completed') }}',
+            'cancelled': '{{ _('cancelled') }}',
+        }[a.status] || a.status;
         const taskNames = a.task_names || [];
         return `
         <tr>
@@ -146,14 +181,21 @@ async function loadActivities() {
             <td>${a.customer_name || '-'}</td>
             <td>${a.assigned_to_name || '-'}</td>
             <td><span class="badge rounded-pill bg-info" style="cursor:pointer" onclick="toggleActTasks('${a._id}')">${taskNames.length} {{ _('tasks') }}</span></td>
-            <td><span class="badge rounded-pill bg-${statusBadge}">${a.status}</span></td>
+            <td><span class="badge rounded-pill bg-${statusBadge}">${statusLabel}</span></td>
             <td><small class="text-muted">${formatDate(a.created_at)}</small></td>
             <td class="table-actions">
-                ${a.status === 'pending' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'local_admin') ? `
-                    <button class="btn btn-sm btn-outline-info" onclick="updateStatus('${a._id}','in_progress')" title="{{ _('accept') }}">
-                        <i class="bi bi-check-lg"></i>
+                ${(a.status === 'pending' || a.status === 'assigned') && a.assigned_to === '{{ user_id }}' ? `
+                    <button class="btn btn-sm btn-outline-info" onclick="updateStatus('${a._id}','in_progress')" title="{{ _('start_activity') }}">
+                        <i class="bi bi-play-fill"></i>
                     </button>
                 ` : ''}
+                {% if user.role == 'local_admin' %}
+                ${a.status !== 'completed' && a.status !== 'cancelled' ? `
+                    <button class="btn btn-sm btn-outline-secondary" onclick="openAssignModal('${a._id}')" title="{{ _('assign_activity') }}">
+                        <i class="bi bi-person-check"></i>
+                    </button>
+                ` : ''}
+                {% endif %}
                 ${a.status === 'in_progress' && (a.assigned_to === '{{ user_id }}' || '{{ user.role }}' === 'local_admin') ? `
                     <button class="btn btn-sm btn-outline-success" onclick="updateStatus('${a._id}','completed')" title="{{ _('complete') }}">
                         <i class="bi bi-check-all"></i>
@@ -206,6 +248,43 @@ async function deleteActivity(id) {
             loadActivities();
         });
     });
+}
+
+let assigningActivityId = null;
+
+async function openAssignModal(id) {
+    const activity = activitiesData.find(x => x._id === id);
+    if (!activity) return;
+    assigningActivityId = id;
+    document.getElementById('assignActivityTitle').textContent = activity.title;
+    const select = document.querySelector('#assignActivityForm [name=assigned_to]');
+    select.innerHTML = '<option value="">{{ _('unassigned') }}</option>';
+    const employees = await apiRequest('/users/?role=employee');
+    (employees || []).forEach(u => {
+        select.innerHTML += `<option value="${u._id}">${u.full_name}</option>`;
+    });
+    select.value = activity.assigned_to || '';
+    document.getElementById('assignActivityError').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('assignActivityModal')).show();
+}
+
+async function saveAssignment(e) {
+    e.preventDefault();
+    const select = e.target.assigned_to;
+    const data = await apiRequest(`/activities/${assigningActivityId}/assign`, {
+        method: 'PUT',
+        body: JSON.stringify({ assigned_to: select.value || null }),
+    });
+    if (data && (data._id || data.status)) {
+        bootstrap.Modal.getInstance(document.getElementById('assignActivityModal')).hide();
+        showToast('{{ _('status_updated') }}');
+        loadActivities();
+    } else {
+        const errorEl = document.getElementById('assignActivityError');
+        errorEl.textContent = (data && data.error) || 'Error';
+        errorEl.classList.remove('d-none');
+    }
+    return false;
 }
 
 let noteActivityId = null;

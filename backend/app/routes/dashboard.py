@@ -168,7 +168,10 @@ def employee_stats():
 
     return jsonify(
         {
-            "pending_activities": db.activities.count_documents({**base, "status": "pending"}),
+            # Waiting for the employee to start: pending pool + freshly assigned.
+            "pending_activities": db.activities.count_documents(
+                {**base, "status": {"$in": ["pending", "assigned"]}}
+            ),
             "in_progress_activities": db.activities.count_documents({**base, "status": "in_progress"}),
             "completed_activities": db.activities.count_documents({**base, "status": "completed"}),
             "unread_notifications": db.notifications.count_documents({"user_id": me, "read": False}),

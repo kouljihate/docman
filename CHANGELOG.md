@@ -4,6 +4,30 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.27.0] - 2026-11-27
+
+### Added
+- **Every affair generates an activity automatically**: one per attached service,
+  or a single affair-level activity when the affair has no service yet. New
+  activities start **pending** with no assignee, so an affair never waits for
+  someone to be chosen before it exists.
+- `PUT /api/activities/<id>/assign` lets a local admin hand a pending activity to
+  a local employee (or take it back), moves the status to **assigned** and sends
+  the employee the assignment notification. Assigning an affair through
+  `PUT /api/affairs/<id>` hands over its waiting activities the same way.
+- PG-ACTIVITIES gained an assign dialog (`#assignActivityModal`, `MDL-ASSIGN-ACTIVITY`)
+  and a Start button for the assignee; the employee dashboard counts assigned
+  activities as waiting work and can start them.
+
+### Changed
+- Activity statuses now include `assigned`, between `pending` and `in_progress`:
+  an employee sees the activity in their own list, starts it, then completes it;
+  completing straight from pending/assigned is refused.
+- The affair form no longer demands an assignee when services are selected, and
+  the hint explains that activities can stay pending.
+- Task and activity responses serialise every ObjectId field, so unassigned
+  activities (no `service_id`, extra `affair_id`/`company_id`) can be returned.
+
 ## [3.26.6] - 2026-11-27
 
 ### Changed

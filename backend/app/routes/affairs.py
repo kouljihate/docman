@@ -68,33 +68,76 @@ def _assignee_for(db, user_id, company_id=None):
     return db.users.find_one(company_scope(query))
 
 
-def _generate_activities(db, affair, services, assignee, performed_by):
-    """Create one activity per service and assign it to `assignee`.
+def _notify_assignee(db, affair, activity_id, title, assignee, now):
+    """Tell an employee that an activity of this affair is waiting for them."""
+    notif_id = db.notifications.insert_one(
+        {
+            "user_id": assignee["_id"],
+            "company_id": affair.get("company_id"),
+            "type": "activity_assigned",
+            "title": "New Activity Assigned",
+            "message": f"You have been assigned a new activity: {title}",
+            "activity_id": activity_id,
+            "affair_id": affair["_id"],
+            "read": False,
+            "created_at": now,
+        }
+    ).inserted_id
 
-    Services that already have an activity on this affair are skipped so the
-    action can be retried without duplicates. Returns the created ids.
+    notify_user(
+        str(assignee["_id"]),
+        {
+            "_id": str(notif_id),
+            "type": "activity_assigned",
+            "title": "New Activity Assigned",
+            "message": f"You have been assigned a new activity: {title}",
+            "activity_id": str(activity_id),
+            "read": False,
+            "created_at": now.isoformat(),
+        },
+    )
+    notify_badge_update(str(assignee["_id"]))
+
+
+def _generate_activities(db, affair, services, assignee, performed_by):
+    """Create the affair's activities and hand them to `assignee` when known.
+
+    One activity per attached service, or a single affair-level activity when
+    the affair has no service yet: every affair always has something to handle.
+    Without an assignee the activity stays ``pending`` until a local admin
+    assigns it; with one it starts ``assigned``. Services that already have an
+    activity are skipped, so the action can be retried without duplicates.
     """
     existing = {
         a.get("service_id")
         for a in db.activities.find({"affair_id": affair["_id"]}, {"service_id": 1})
     }
+    targets = list(services) or [None]
     now = datetime.now(timezone.utc)
     created = []
-    for service in services:
-        if service["_id"] in existing:
+    for service in targets:
+        service_id = service["_id"] if service else None
+        if service_id in existing:
             continue
-        title = f"{affair['name']} - {service['name']}"
+        if service:
+            title = f"{affair['name']} - {service['name']}"
+            description = service.get("description") or affair.get("notes")
+            task_ids = list(service.get("task_ids") or [])
+        else:
+            title = affair["name"]
+            description = affair.get("notes")
+            task_ids = []
         doc = {
             "title": title,
-            "description": service.get("description") or affair.get("notes"),
-            "assigned_to": assignee["_id"],
+            "description": description,
+            "assigned_to": assignee["_id"] if assignee else None,
             "assigned_by": ObjectId(performed_by),
             "customer_id": affair["customer_id"],
             "company_id": affair["company_id"],
             "affair_id": affair["_id"],
-            "service_id": service["_id"],
-            "task_ids": list(service.get("task_ids") or []),
-            "status": "pending",
+            "service_id": service_id,
+            "task_ids": task_ids,
+            "status": "assigned" if assignee else "pending",
             "notes": None,
             "created_at": now,
             "updated_at": now,
@@ -102,42 +145,46 @@ def _generate_activities(db, affair, services, assignee, performed_by):
         activity_id = db.activities.insert_one(doc).inserted_id
         created.append(activity_id)
 
-        notif_id = db.notifications.insert_one(
-            {
-                "user_id": assignee["_id"],
-                "company_id": affair["company_id"],
-                "type": "activity_assigned",
-                "title": "New Activity Assigned",
-                "message": f"You have been assigned a new activity: {title}",
-                "activity_id": activity_id,
-                "affair_id": affair["_id"],
-                "read": False,
-                "created_at": now,
-            }
-        ).inserted_id
-
-        notify_user(
-            str(assignee["_id"]),
-            {
-                "_id": str(notif_id),
-                "type": "activity_assigned",
-                "title": "New Activity Assigned",
-                "message": f"You have been assigned a new activity: {title}",
-                "activity_id": str(activity_id),
-                "read": False,
-                "created_at": now.isoformat(),
-            },
-        )
-        notify_badge_update(str(assignee["_id"]))
+        if assignee:
+            _notify_assignee(db, affair, activity_id, title, assignee, now)
 
         AuditService.log(
             action="create",
             entity_type="activity",
             entity_id=str(activity_id),
             performed_by=performed_by,
-            description=f"Activity '{title}' generated from affair '{affair['name']}'",
+            description=(
+                f"Activity '{title}' generated from affair '{affair['name']}'"
+                + (" and assigned" if assignee else " (pending assignment)")
+            ),
         )
     return created
+
+
+def _assign_open_activities(db, affair, assignee, performed_by):
+    """Hand the affair's pending/assigned activities to `assignee`."""
+    query = {"affair_id": affair["_id"], "status": {"$in": ["pending", "assigned"]}}
+    open_activities = list(db.activities.find(query, {"_id": 1, "title": 1, "assigned_to": 1}))
+    if not open_activities:
+        return 0
+
+    now = datetime.now(timezone.utc)
+    db.activities.update_many(
+        query,
+        {
+            "$set": {
+                "assigned_to": assignee["_id"],
+                "assigned_by": ObjectId(performed_by),
+                "status": "assigned",
+                "updated_at": now,
+            }
+        },
+    )
+    for activity in open_activities:
+        if activity.get("assigned_to") == assignee["_id"]:
+            continue
+        _notify_assignee(db, affair, activity["_id"], activity.get("title"), assignee, now)
+    return len(open_activities)
 
 
 def _affair_pipeline(match):
@@ -263,8 +310,6 @@ def create_affair():
         assignee = _assignee_for(db, affair_data.assigned_to)
         if not assignee:
             return jsonify({"error": "Assigned user must be an employee or local manager of your company"}), 400
-    if services and affair_data.generate_activities and not assignee:
-        return jsonify({"error": "Select the employee or local manager who will handle the activities"}), 400
 
     now = datetime.now(timezone.utc)
     affair_dict = affair_data.model_dump(by_alias=True)
@@ -281,7 +326,9 @@ def create_affair():
     result = db.affairs.insert_one(affair_dict)
     affair_dict["_id"] = result.inserted_id
 
-    if services and assignee and affair_data.generate_activities:
+    # Every affair gets its activity right away; without an assignee it stays
+    # pending until a local admin hands it to an employee.
+    if affair_data.generate_activities:
         _generate_activities(db, affair_dict, services, assignee, current_user_id())
 
     AuditService.log(
@@ -365,6 +412,7 @@ def update_affair(affair_id):
         if services is None:
             return jsonify({"error": "One or more services were not found"}), 404
         update_dict["service_ids"] = [s["_id"] for s in services]
+    assignee = None
     if "assigned_to" in update_dict:
         assignee = _assignee_for(db, update_dict["assigned_to"], tenant_id)
         if not assignee:
@@ -375,6 +423,10 @@ def update_affair(affair_id):
 
     update_dict["updated_at"] = datetime.now(timezone.utc)
     db.affairs.update_one({"_id": old["_id"]}, {"$set": update_dict})
+
+    # Assigning the affair hands its waiting activities to the same person.
+    if assignee:
+        _assign_open_activities(db, old, assignee, current_user_id())
 
     AuditService.log(
         action="update",
@@ -399,14 +451,14 @@ def generate_affair_activities(affair_id):
         return jsonify({"error": "Affair not found"}), 404
 
     services = _services_for(db, [str(s) for s in affair.get("service_ids") or []])
-    if not services:
-        return jsonify({"error": "Attach at least one service to this affair first"}), 400
+    if services is None:
+        return jsonify({"error": "One or more services were not found"}), 404
 
-    if not affair.get("assigned_to"):
-        return jsonify({"error": "Assign this affair to an employee or local manager first"}), 400
-    assignee = _assignee_for(db, str(affair["assigned_to"]))
-    if not assignee:
-        return jsonify({"error": "The assigned user is no longer available"}), 400
+    assignee = None
+    if affair.get("assigned_to"):
+        assignee = _assignee_for(db, str(affair["assigned_to"]))
+        if not assignee:
+            return jsonify({"error": "The assigned user is no longer available"}), 400
 
     created = _generate_activities(db, affair, services, assignee, current_user_id())
     return (

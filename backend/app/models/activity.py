@@ -8,12 +8,12 @@ class ActivityCreate(BaseModel):
     customer_id: str = Field(..., description="Customer user ID")
     service_id: str = Field(..., description="Service ID")
     assigned_employees: list[str] = Field(..., description="Employee IDs who get the tasks")
-    status: Literal["pending", "in_progress", "completed", "cancelled"] = "pending"
+    status: Literal["pending", "assigned", "in_progress", "completed", "cancelled"] = "pending"
     notes: Optional[str] = None
 
 
 class ActivityUpdate(BaseModel):
-    status: Optional[Literal["pending", "in_progress", "completed", "cancelled"]] = None
+    status: Optional[Literal["pending", "assigned", "in_progress", "completed", "cancelled"]] = None
     notes: Optional[str] = None
     assigned_employees: Optional[list[str]] = None
 
@@ -22,7 +22,7 @@ class ActivityResponse(BaseModel):
     id: str = Field(alias="_id")
     customer_id: str
     customer_name: Optional[str] = None
-    service_id: str
+    service_id: Optional[str] = None
     service_name: Optional[str] = None
     assigned_employees: list[str] = []
     assigned_employee_names: list[str] = []

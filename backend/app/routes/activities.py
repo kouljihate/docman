@@ -22,6 +22,19 @@ from app.tenancy import (
 activities_bp = Blueprint("activities", __name__, url_prefix="/api/activities")
 
 
+def _serialize_activity(activity):
+    """JSON-ready copy of an activity document."""
+    data = {}
+    for key, value in activity.items():
+        if isinstance(value, ObjectId):
+            data[key] = str(value)
+        elif isinstance(value, list):
+            data[key] = [str(item) if isinstance(item, ObjectId) else item for item in value]
+        else:
+            data[key] = value
+    return data
+
+
 @activities_bp.route("/", methods=["POST"])
 @jwt_required()
 @local_admin_required
@@ -64,7 +77,8 @@ def create_activity():
         "customer_id": ObjectId(customer_id),
         "affair_id": ObjectId(affair_id) if affair_id else None,
         "task_ids": [ObjectId(tid) for tid in task_ids],
-        "status": "pending",
+        # Created directly for an employee, so it is already assigned.
+        "status": "assigned",
         "notes": notes or None,
         "company_id": current_company_id(),
         "created_at": now,
@@ -203,13 +217,7 @@ def list_activities():
         {"$project": {"assigned_user": 0, "assigned_by_user": 0, "customer_user": 0, "tasks": 0, "affair": 0}},
     ]
 
-    activities = list(db.activities.aggregate(pipeline))
-    for a in activities:
-        for key in ("_id", "assigned_to", "assigned_by", "customer_id"):
-            if key in a and isinstance(a[key], ObjectId):
-                a[key] = str(a[key])
-        if "task_ids" in a and a["task_ids"]:
-            a["task_ids"] = [str(t) if isinstance(t, ObjectId) else t for t in a["task_ids"]]
+    activities = [_serialize_activity(a) for a in db.activities.aggregate(pipeline)]
     return jsonify(activities), 200
 
 
@@ -260,13 +268,96 @@ def get_activity(activity_id):
     activities = list(db.activities.aggregate(pipeline))
     if not activities:
         return jsonify({"error": "Activity not found"}), 404
-    a = activities[0]
-    for key in ("_id", "assigned_to", "assigned_by"):
-        if key in a and isinstance(a[key], ObjectId):
-            a[key] = str(a[key])
-    if "task_ids" in a and a["task_ids"]:
-        a["task_ids"] = [str(t) if isinstance(t, ObjectId) else t for t in a["task_ids"]]
-    return jsonify(a), 200
+    return jsonify(_serialize_activity(activities[0])), 200
+
+
+@activities_bp.route("/<activity_id>/assign", methods=["PUT"])
+@jwt_required()
+@local_admin_required
+def assign_activity(activity_id):
+    """Hand an activity to an employee, or take it back to the pending pool."""
+    db = get_db()
+    data = request.get_json(silent=True) or {}
+    assigned_to = (data.get("assigned_to") or "").strip()
+
+    activity = db.activities.find_one(company_scope({"_id": to_object_id(activity_id)}))
+    if not activity:
+        return jsonify({"error": "Activity not found"}), 404
+    if activity.get("status") in ("completed", "cancelled"):
+        return jsonify({"error": "This activity is closed"}), 400
+
+    now = datetime.now(timezone.utc)
+    update = {"updated_at": now}
+
+    if assigned_to:
+        employee = db.users.find_one(
+            company_scope(
+                {
+                    "_id": to_object_id(assigned_to),
+                    "role": {"$in": [LOCAL_EMPLOYEE, LOCAL_ADMIN]},
+                    "is_active": True,
+                }
+            )
+        )
+        if not employee:
+            return jsonify({"error": "Assigned user must be an employee of your company"}), 400
+
+        update["assigned_to"] = employee["_id"]
+        update["assigned_by"] = ObjectId(current_user_id())
+        if activity.get("status") in ("pending", "assigned"):
+            update["status"] = "assigned"
+        db.activities.update_one({"_id": activity["_id"]}, {"$set": update})
+
+        notif_id = db.notifications.insert_one(
+            {
+                "user_id": employee["_id"],
+                "company_id": current_company_id(),
+                "type": "activity_assigned",
+                "title": "New Activity Assigned",
+                "message": f"You have been assigned a new activity: {activity.get('title')}",
+                "activity_id": activity["_id"],
+                "affair_id": activity.get("affair_id"),
+                "read": False,
+                "created_at": now,
+            }
+        ).inserted_id
+        notify_user(
+            str(employee["_id"]),
+            {
+                "_id": str(notif_id),
+                "type": "activity_assigned",
+                "title": "New Activity Assigned",
+                "message": f"You have been assigned a new activity: {activity.get('title')}",
+                "activity_id": activity_id,
+                "read": False,
+                "created_at": now.isoformat(),
+            },
+        )
+        notify_badge_update(str(employee["_id"]))
+
+        AuditService.log(
+            action="update",
+            entity_type="activity",
+            entity_id=activity_id,
+            performed_by=current_user_id(),
+            description=f"Activity '{activity.get('title')}' assigned to {employee.get('full_name')}",
+        )
+    else:
+        update["assigned_to"] = None
+        if activity.get("status") == "assigned":
+            update["status"] = "pending"
+        db.activities.update_one({"_id": activity["_id"]}, {"$set": update})
+
+        AuditService.log(
+            action="update",
+            entity_type="activity",
+            entity_id=activity_id,
+            performed_by=current_user_id(),
+            description=f"Activity '{activity.get('title')}' unassigned",
+        )
+
+    updated = db.activities.find_one({"_id": activity["_id"]})
+    return jsonify(_serialize_activity(updated)), 200
 
 
 @activities_bp.route("/<activity_id>/status", methods=["PUT"])
@@ -288,13 +379,17 @@ def update_activity_status(activity_id):
     current = activity.get("status")
     role = current_role()
 
-    if role != LOCAL_ADMIN and str(activity["assigned_to"]) != identity:
+    if role != LOCAL_ADMIN and (
+        not activity.get("assigned_to") or str(activity["assigned_to"]) != identity
+    ):
         return jsonify({"error": "Forbidden"}), 403
 
     if current == "completed":
         return jsonify({"error": "Activity is already completed"}), 400
 
-    if current == "pending" and new_status != "in_progress" and role != LOCAL_ADMIN:
+    # An activity waiting in the pending pool, or freshly assigned, has to be
+    # started before it can be completed.
+    if current in ("pending", "assigned") and new_status != "in_progress" and role != LOCAL_ADMIN:
         return jsonify({"error": "Must accept before completing"}), 400
 
     if current == "in_progress" and new_status == "in_progress":
@@ -377,10 +472,7 @@ def update_activity_status(activity_id):
     )
 
     updated = db.activities.find_one({"_id": ObjectId(activity_id)})
-    for key in ("_id", "assigned_to", "assigned_by"):
-        if key in updated and isinstance(updated[key], ObjectId):
-            updated[key] = str(updated[key])
-    return jsonify(updated), 200
+    return jsonify(_serialize_activity(updated)), 200
 
 
 @activities_bp.route("/notifications", methods=["GET"])
