@@ -4,6 +4,14 @@ All notable changes to Document Manager are recorded here.
 The version is defined once in `backend/config.py` (`VERSION`) and follows
 [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 
+## [3.26.1] - 2026-11-27
+
+### Changed
+- **PG-CUSTOMERS shows fewer columns**: the CIN and Email columns are gone from
+  the customer table, which now lists full name, phone, affairs, status, tasks
+  and actions. Both fields are still stored and remain editable in the customer
+  dialog.
+
 ## [3.26.0] - 2026-11-27
 
 ### Added

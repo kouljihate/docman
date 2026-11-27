@@ -22,8 +22,6 @@
                 <thead class="table-light">
                     <tr>
                         <th>{{ _('full_name') }}</th>
-                        <th>{{ _('cin') }}</th>
-                        <th>{{ _('email') }}</th>
                         <th>{{ _('phone') }}</th>
                         <th>{{ _('affairs_count') }}</th>
                         <th>{{ _('status') }}</th>
@@ -32,7 +30,7 @@
                     </tr>
                 </thead>
                 <tbody id="customersTableBody">
-                    <tr><td colspan="8" class="text-center text-muted">{{ _('loading') }}</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted">{{ _('loading') }}</td></tr>
                 </tbody>
             </table>
         </div>
@@ -160,7 +158,7 @@ async function loadCustomers() {
     const data = await apiRequest('/customers/');
     const tbody = document.getElementById('customersTableBody');
     if (!data || data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">{{ _('no_customers') }}</td></tr>';
         return;
     }
     customersData = data;
@@ -170,8 +168,6 @@ async function loadCustomers() {
                 ${c.photo_id ? `<img src="${c.photo_id}" alt="" class="rounded me-2" style="height:26px;width:26px;object-fit:cover" onerror="this.style.display='none'">` : ''}
                 <a href="/customers/${c._id}" class="fw-bold text-decoration-none">${c.full_name}</a>
             </td>
-            <td>${c.cin || '-'}</td>
-            <td>${c.email}</td>
             <td>${c.phone || '-'}</td>
             <td><span class="badge bg-info">${c.affair_count || 0}</span></td>
             <td><span class="badge bg-${c.is_active ? 'success' : 'danger'}">${c.is_active ? '{{ _('active') }}' : '{{ _('inactive') }}'}</span></td>

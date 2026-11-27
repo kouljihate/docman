@@ -283,7 +283,7 @@ PAGES = {
         "layout": "dashboard",
         "template": "customers.html",
         "roles": ["local_admin"],
-        "summary": "Customer directory of the current company, with CIN, photo ID, contact details and per-customer affair and task counts.",
+        "summary": "Customer directory of the current company, with photo ID, phone, status and per-customer affair and task counts.",
         "features": [
             "Searchable customer table with pagination",
             "Create / edit customer dialog (identity, CIN, photo, status)",
